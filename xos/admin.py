@@ -60,7 +60,7 @@ class CeilometerServiceAdmin(ReadOnlyAwareAdmin):
     suit_form_includes = (('ceilometeradmin.html', 'top', 'administration'),
                            )
 
-    def queryset(self, request):
+    def get_queryset(self, request):
         return CeilometerService.get_service_objects_by_user(request.user)
 
 class MonitoringChannelForm(forms.ModelForm):
@@ -113,7 +113,7 @@ class MonitoringChannelAdmin(ReadOnlyAwareAdmin):
             obj.delete()
     delete_selected_objects.short_description = "Delete Selected MonitoringChannel Objects"
 
-    def queryset(self, request):
+    def get_queryset(self, request):
         return MonitoringChannel.get_tenant_objects_by_user(request.user)
 
 class SFlowServiceForm(forms.ModelForm):
@@ -165,7 +165,7 @@ class SFlowServiceAdmin(ReadOnlyAwareAdmin):
     suit_form_includes = (('sflowadmin.html', 'top', 'administration'),
                            )
 
-    def queryset(self, request):
+    def get_queryset(self, request):
         return SFlowService.get_service_objects_by_user(request.user)
 
 class SFlowTenantForm(forms.ModelForm):
@@ -208,7 +208,7 @@ class SFlowTenantAdmin(ReadOnlyAwareAdmin):
 
     suit_form_tabs = (('general','Details'), ('tenantattrs', 'Attributes'))
 
-    def queryset(self, request):
+    def get_queryset(self, request):
         return SFlowTenant.get_tenant_objects_by_user(request.user)
 
 admin.site.register(CeilometerService, CeilometerServiceAdmin)
