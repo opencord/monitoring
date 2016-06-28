@@ -6,14 +6,14 @@ sys.path.append("/opt/tosca")
 from translator.toscalib.tosca_template import ToscaTemplate
 
 from core.models import ServiceAttribute
-from services.ceilometer.models import CeilometerService
+from services.monitoring.models import CeilometerService
 
 from service import XOSService
 
 class XOSCeilometerService(XOSService):
     provides = "tosca.nodes.CeilometerService"
     xos_model = CeilometerService
-    copyin_props = ["view_url", "icon_url", "enabled", "published", "public_key", "versionNumber", "ceilometer_pub_sub_url"]
+    copyin_props = ["view_url", "icon_url", "enabled", "published", "private_key_fn", "public_key", "versionNumber", "ceilometer_pub_sub_url"]
 
     def set_service_attr(self, obj, prop_name, value):
         value = self.try_intrinsic_function(value)

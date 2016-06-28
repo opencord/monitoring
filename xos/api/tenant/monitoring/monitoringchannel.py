@@ -9,7 +9,7 @@ from django.forms import widgets
 from xos.apibase import XOSListCreateAPIView, XOSRetrieveUpdateDestroyAPIView, XOSPermissionDenied
 from api.xosapi_helpers import PlusModelSerializer, XOSViewSet, ReadOnlyField
 
-from services.ceilometer.models import MonitoringChannel, CeilometerService
+from services.monitoring.models import MonitoringChannel, CeilometerService
 
 def get_default_ceilometer_service():
     ceilometer_services = CeilometerService.get_service_objects().all()

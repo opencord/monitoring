@@ -26,14 +26,14 @@
 {% if delete %}
   - name: Remove tenant
 # FIXME: Adding dummy template action to avoid "action attribute missing in task" error
-    template: src=/opt/xos/synchronizers/monitoring_channel/templates/ceilometer_proxy_config.j2 dest=/usr/local/share/monitoring-channel-{{ unique_id }}_ceilometer_proxy_config mode=0777
+    template: src=/opt/xos/synchronizers/monitoring/templates/ceilometer_proxy_config.j2 dest=/usr/local/share/monitoring-channel-{{ unique_id }}_ceilometer_proxy_config mode=0777
     notify:
      - stop monitoring-channel
      - remove container
 {% else %}
 {% if full_setup %}
 #  - name: Docker repository
-#    copy: src=/opt/xos/synchronizers/monitoring_channel/files/docker.list
+#    copy: src=/opt/xos/synchronizers/monitoring/files/docker.list
 #      dest=/etc/apt/sources.list.d/docker.list
 #
 #  - name: Import the repository key
@@ -74,7 +74,7 @@
 #  - file: path=/usr/local/share/monitoring-channel-{{ unique_id }}_ceilometer_proxy_config state=absent
 
   - name: ceilometer proxy config
-    template: src=/opt/xos/synchronizers/monitoring_channel/templates/ceilometer_proxy_config.j2 dest=/usr/local/share/monitoring-channel-{{ unique_id }}_ceilometer_proxy_config mode=0777
+    template: src=/opt/xos/synchronizers/monitoring/templates/ceilometer_proxy_config.j2 dest=/usr/local/share/monitoring-channel-{{ unique_id }}_ceilometer_proxy_config mode=0777
     notify:
      - copy ceilo-config-file
      - restart monitoring-channel container
@@ -83,10 +83,10 @@
 #     - start monitoring-channel
 
   - name: Monitoring channel upstart
-    template: src=/opt/xos/synchronizers/monitoring_channel/templates/monitoring-channel.conf.j2 dest=/etc/init/monitoring-channel-{{ unique_id }}.conf
+    template: src=/opt/xos/synchronizers/monitoring/templates/monitoring-channel.conf.j2 dest=/etc/init/monitoring-channel-{{ unique_id }}.conf
 
   - name: Monitoring channel startup script
-    template: src=/opt/xos/synchronizers/monitoring_channel/templates/start-monitoring-channel.sh.j2 dest=/usr/local/sbin/start-monitoring-channel-{{ unique_id }}.sh mode=0755
+    template: src=/opt/xos/synchronizers/monitoring/templates/start-monitoring-channel.sh.j2 dest=/usr/local/sbin/start-monitoring-channel-{{ unique_id }}.sh mode=0755
     notify:
 #    - restart monitoring-channel
      - stop monitoring-channel

@@ -10,7 +10,7 @@ from synchronizers.base.syncstep import SyncStep
 from synchronizers.base.ansible import run_template_ssh
 from synchronizers.base.SyncInstanceUsingAnsible import SyncInstanceUsingAnsible
 from core.models import Service, Slice
-from services.ceilometer.models import CeilometerService, MonitoringChannel
+from services.monitoring.models import CeilometerService, MonitoringChannel
 from xos.logger import Logger, logging
 
 parentdir = os.path.join(os.path.dirname(__file__),"..")
@@ -23,7 +23,7 @@ class SyncMonitoringChannel(SyncInstanceUsingAnsible):
     observes=MonitoringChannel
     requested_interval=0
     template_name = "sync_monitoringchannel.yaml"
-    service_key_name = "/opt/xos/synchronizers/monitoring_channel/monitoring_channel_private_key"
+    service_key_name = "/opt/xos/synchronizers/monitoring/monitoring_channel_private_key"
 
     def __init__(self, *args, **kwargs):
         super(SyncMonitoringChannel, self).__init__(*args, **kwargs)

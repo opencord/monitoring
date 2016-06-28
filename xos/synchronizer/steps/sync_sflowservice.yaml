@@ -42,7 +42,7 @@
       state=latest
 
   - name: sflow pub-sub config
-    template: src=/opt/xos/synchronizers/monitoring_channel/templates/sflow_pub_sub/sflow_pub_sub_config.j2 dest=/usr/local/share/sflow_pub_sub.conf mode=0777
+    template: src=/opt/xos/synchronizers/monitoring/templates/sflow_pub_sub/sflow_pub_sub_config.j2 dest=/usr/local/share/sflow_pub_sub.conf mode=0777
 
   - name: Start SFLOW pub-sub container
     docker:

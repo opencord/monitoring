@@ -6,7 +6,7 @@ sys.path.append("/opt/tosca")
 from translator.toscalib.tosca_template import ToscaTemplate
 
 from core.models import ServiceAttribute
-from services.ceilometer.models import SFlowService
+from services.monitoring.models import SFlowService
 
 from service import XOSService
 

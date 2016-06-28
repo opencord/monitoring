@@ -12,7 +12,8 @@ templates/monitoring-channel.conf.j2
 templates/ceilometer_proxy_server.py
 templates/start_ceilometer_proxy
 manifest
-monitoring_channel_synchronizer_config
+run.sh
+monitoring_synchronizer_config
 steps/sync_sflowtenant.yaml
 steps/sync_sflowtenant.py
 steps/sync_monitoringchannel.yaml
@@ -22,5 +23,5 @@ steps/sync_sflowservice.py
 files/vm-resolv.conf
 files/docker.list
 model-deps
-supervisor/monitoring_channel_observer.conf
-monitoring_channel_synchronizer.py
+supervisor/monitoring_observer.conf
+monitoring_synchronizer.py

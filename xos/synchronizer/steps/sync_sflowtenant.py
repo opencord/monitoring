@@ -13,7 +13,7 @@ from synchronizers.base.syncstep import SyncStep
 from synchronizers.base.ansible import run_template_ssh
 from synchronizers.base.SyncInstanceUsingAnsible import SyncInstanceUsingAnsible
 from core.models import Service, Slice, ControllerSlice, ControllerUser
-from services.ceilometer.models import SFlowService, SFlowTenant
+from services.monitoring.models import SFlowService, SFlowTenant
 from xos.logger import Logger, logging
 
 # hpclibrary will be in steps/..
@@ -27,7 +27,7 @@ class SyncSFlowTenant(SyncInstanceUsingAnsible):
     observes=SFlowTenant
     requested_interval=0
     template_name = "sync_sflowtenant.yaml"
-    service_key_name = "/opt/xos/synchronizers/monitoring_channel/monitoring_channel_private_key"
+    service_key_name = "/opt/xos/synchronizers/monitoring/monitoring_channel_private_key"
 
     def __init__(self, *args, **kwargs):
         super(SyncSFlowTenant, self).__init__(*args, **kwargs)

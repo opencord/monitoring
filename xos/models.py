@@ -18,7 +18,7 @@ class CeilometerService(Service):
     KIND = CEILOMETER_KIND
 
     class Meta:
-        app_label = "ceilometer"
+        app_label = "monitoring"
         verbose_name = "Ceilometer Service"
         proxy = True
 
@@ -188,7 +188,7 @@ class SFlowService(Service):
     KIND = SFLOW_KIND
 
     class Meta:
-        app_label = "ceilometer"
+        app_label = "monitoring"
         verbose_name = "sFlow Collection Service"
         proxy = True
 
