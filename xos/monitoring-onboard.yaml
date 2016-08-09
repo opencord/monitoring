@@ -19,7 +19,7 @@ topology_template:
           synchronizer: synchronizer/manifest
           synchronizer_run: monitoring_synchronizer.py
           tosca_resource: tosca/resources/ceilometerservice.py, tosca/resources/ceilometertenant.py, tosca/resources/sflowservice.py
-          rest_tenant: subdirectory:monitoring api/tenant/monitoring/monitoringchannel.py
+          rest_tenant: subdirectory:monitoring api/tenant/monitoring/monitoringchannel.py, subdirectory:monitoring/dashboard api/tenant/monitoring/dashboard/ceilometerdashboard.py
           private_key: file:///opt/xos/key_import/monitoringservice_rsa
           public_key: file:///opt/xos/key_import/monitoringservice_rsa.pub
 
