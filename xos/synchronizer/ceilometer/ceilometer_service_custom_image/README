@@ -1,0 +1,50 @@
+# Readme to build custom image.
+VM Building:
+1.Download ubuntu 14.04 server version and create a VM using virt-manager(kvm hypervisor).
+Note: Can use virtual box also instead of virt-manger.
+2.Create user ubuntu with sudo previlages.
+3.git clone https://gerrit.opencord.org/monitoring
+4.Go to /home/ubuntu/monitoring/xos/synchronizer/ceilometer/ceilometer_service_custom_image/startup-scripts
+  Edit i.STARTUP_PATH points to startup-scripts dir,
+       ii.IP variable in ceilometer_init_script.sh for accessing keystone from outside the vm.
+       iii.PUB_SUB_PATH point to ceilometer_pub_sub dir
+5.Go to /home/ubuntu/monitoring/xos/synchronizer/ceilometer/ceilometer_service_custom_image
+6.run install.sh
+  ./install.sh
+7.With step 4 ceilometer setup(keystone,musql,rabbitmq),zookeeper and kafka will be installed.
+8.Go to /home/ubuntu/monitoring/xos/synchronizer/ceilometer/ceilometer-plugins
+   i.cp -rf network/ext_services/ /usr/lib/python2.7/dist-packages/ceilometer/network/
+   ii.Update entry_point.txt:
+       copy the contents of ceilometer_entry_points.txt to /usr/lib/python2.7/dist-packages/ceilometer-6.0.0.egg-info/entry_points.txt under [ceilometer.notification]
+9. Update /home/ubuntu/monitoring/xos/synchronizer/ceilometer/ceilometer_pub_sub/pub_sub.conf with proper IP and port numbers and rabbitmq credentials.
+10.update /etc/ceilmeter/pipeline.yaml with required publisher info for coressponding meters.
+   ex:
+    sources:
+    - name: meter_source
+      interval: 600
+      meters:
+          - "*"
+          - "!vsg"
+          - "!vsg.*"
+    sinks:
+          - meter_sink
+    - name: meter_sink
+      transformers:
+      publishers:
+          - notifier://
+          - kafka://localhost:9092?topic=ceilometer 
+  
+11.This setup by default created ceilometer topic for kafka.If any other topic is needed to use in this setup please
+   create the topic before using it wih the following command.
+  /opt/kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic <topic name>
+12.Reboot the system.
+13.After rebooting pleasing check following services are running using ps command:
+  i.ceilometer services.
+  ii.kafka and zookeeper services
+  iii.sub_main.py script for pub-sub.
+14.Shoutdown the VM.
+15.Copy the vm image to tmp folder.
+16.convert and compress the image using the following command:
+  $sudo qemu-img convert -O qcow2 -c ceilometer-trusty-server-multi-nic.qcow2 ceilometer-trusty-server-multi-nic.compressed.qcow2
+17.The compressed image can be run as a openstack vm for ceilometer service.
+18.--

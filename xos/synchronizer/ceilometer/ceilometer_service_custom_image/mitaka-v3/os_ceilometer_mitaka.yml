@@ -1,0 +1,180 @@
+---
+- name: Install Standalone ceilometer
+  hosts: local
+  vars:
+    mysql_root_password: "password"
+  sudo: yes
+  tasks:
+  # Adding cloud repo and update,upgrade
+  - name: install repository
+    apt: name=software-properties-common state=present
+  - name: Adding package to repository list
+    shell: add-apt-repository cloud-archive:mitaka
+  - name: apt update
+    apt: update_cache=yes
+  - name: apt dist-upgrade
+    apt: upgrade=dist
+  - name: installing openstack clients
+    apt: name=python-openstackclient state=present 
+ #Installing Mysql Service
+  - name: Install Mysql Service
+    apt: name={{ item }} state=installed update_cache=yes
+    with_items:
+      - mariadb-server
+      - python-pymysql
+      - python-mysqldb
+
+  - name: Copy cnf file 
+    template: src=openstack.cnf.j2 dest=/etc/mysql/conf.d/openstack.cnf owner=root group=root mode=0644 
+  - name: Start the MySQL service
+    service: name=mysql state=restarted enabled=true
+
+  # Mysql secure installation
+  # Note: Please comment this section if this playbook is not excuting first time(fix me)
+  - name: delete anonymous MySQL server user for localhost
+    action: mysql_user user="" host="localhost" state="absent"
+  - name: delete anonymous MySQL server user for localhost
+    action: mysql_user user="" state="absent"
+  - name: remove the MySQL test database
+    action: mysql_db db=test state=absent
+
+  #Updating root permissions
+  - name: update mysql root password for all root accounts
+    sudo: yes
+    mysql_user: 
+      name: root 
+      host: "{{ item }}" 
+      login_user: root
+      #password: "{{ mysql_root_password }}"
+      password: "password"
+      login_password: "{{ mysql_root_password }}"
+      check_implicit_admin: yes
+      priv: "*.*:ALL,GRANT"
+    with_items:
+      - "{{ ansible_hostname }}"
+      - 127.0.0.1
+      - ::1
+      - localhost
+  #Installing rabbitmq service
+  - name: rabbitmq-server
+    apt: name=rabbitmq-server state=present
+  - name : Adding Rabbitmq user
+    shell : rabbitmqctl add_user openstack "password";rabbitmqctl set_permissions openstack ".*" ".*" ".*"
+
+  # Installing Keystone Service
+  - name: Creating keystone.override file 
+    template: src=keystone.override.j2 dest=/etc/init/keystone.override owner=root group=root mode=0644 
+
+  - name: Install Keystone
+    apt: name={{ item }} state=installed update_cache=yes
+    with_items:
+      - keystone 
+      - apache2 
+      - libapache2-mod-wsgi 	
+
+    # installing memcached
+  - name : installing memcached service
+    apt: name={{ item }}  state=present   
+    with_items:
+      - memcached
+      - python-memcache
+  - name: reStart the memcached service
+    service: name=memcached state=restarted enabled=true	  
+    #editing memcache conf file
+  - name: Adding new line
+    lineinfile: dest=/etc/memcached.conf line="-l 127.0.0.1"
+  - name: Restart memcached service
+    service: name=memcached state=restarted enabled=true  	
+  - name: Keystone create DB for service
+    mysql_db:
+      login_user: "root"
+      login_password: "password"
+      login_host: "localhost"
+      name: "keystone"
+      state: "present"
+  - name: Keystone grant access to the DB for the service
+    mysql_user:
+      login_user: "root"
+      login_password: "password"
+      login_host: "localhost"
+      name: "keystone"
+      password: "password"
+      host: "{{ item }}"
+      state: "present"
+      priv: "keystone.*:ALL"
+    with_items:
+       - "localhost"
+       - "%"
+ # Installing Keystone Service
+  - name: Creating keystone.override file 
+    template: src=keystone.override.j2 dest=/etc/init/keystone.override owner=root group=root mode=0644 
+
+  - name: Install Keystone
+    apt: name={{ item }} state=installed update_cache=yes
+    with_items:
+      - keystone 
+      - apache2 
+      - libapache2-mod-wsgi 
+  - name: Creating keystone.conf  
+    template: src=keystone.conf.j2 dest=/etc/keystone/keystone.conf owner=root group=root mode=0644
+  - name: Running sync database
+    shell: /bin/sh -c "keystone-manage db_sync" keystone
+  - name: initializing fernet keystone
+    shell: keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone  
+  # Configuring apache server
+  - name: Adding new line
+    lineinfile: dest=/etc/apache2/apache2.conf line="ServerName localhost"
+
+  - name: Creating wsgi-keystone.conf  
+    template: src=wsgi-keystone.conf.j2 dest=/etc/apache2/sites-available/wsgi-keystone.conf owner=root group=root mode=0644
+  - name : Configuring apache2
+    shell:  ln -s /etc/apache2/sites-available/wsgi-keystone.conf /etc/apache2/sites-enabled
+    ignore_errors: yes
+  - name: Restart apache2 service
+    service: name=apache2 state=restarted enabled=true	
+  - name : removing previous databases
+    shell: rm -f /var/lib/keystone/keystone.db
+ #Installing mongod db server
+  - name: Install the Mongo db server
+    apt: name={{ item }} state=installed update_cache=yes
+    with_items:
+      - mongodb-server
+      - mongodb-clients
+      - python-pymongo
+  - name: Creating mongodb.conf
+    template: src=mongodb.conf.j2 dest=/etc/mongodb.conf owner=root group=root mode=0644
+  - name: Stopping mongodb service
+    service: name=mongodb state=stopped
+  - name: Removing mongodb files
+    shell: rm -rf /var/lib/mongodb/journal/prealloc.*
+  - name: starting mongodb service
+    service: name=mongodb state=started
+  - name : Configuring users
+    script: configure_users_mitaka.sh
+  - name: Adding ceilometer database
+    script: mongo_user.sh
+    #mongodb_user: database=ceilometer name=ceilometer password=password roles='readWrite,userAdmin' state=present	
+  #Installing Ceilometer Services
+  - name : Install Ceilometer services
+    apt: name={{ item }} state=installed update_cache=yes
+    with_items:
+      - ceilometer-api
+      - ceilometer-collector
+      - ceilometer-agent-central
+      - ceilometer-agent-notification
+      - python-ceilometerclient
+ 
+  - name: Creating Ceilometer.conf
+    template: src=ceilometer.conf.j2 dest=/etc/ceilometer/ceilometer.conf owner=root group=root mode=0644
+
+  - name: Restarting ceilometer-agent-central
+    service: name=ceilometer-agent-central state=restarted
+
+  - name: Restarting ceilometer-agent-notification
+    service: name=ceilometer-agent-notification state=restarted
+
+  - name: Restarting Celometer API
+    service: name=ceilometer-api state=restarted
+
+  - name: Restarting ceilometer-collector
+    service: name=ceilometer-collector state=restarted
