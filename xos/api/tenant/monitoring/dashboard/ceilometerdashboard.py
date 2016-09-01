@@ -175,6 +175,11 @@ def get_resource_map(request, ceilometer_url, query=None):
                 name = r['metadata']['display_name']
             elif 'name' in r['metadata']:
                 name = r['metadata']['name']
+            #Output of 'resources' REST query has chnaged from kilo to mitaka,below if conditions to handle mitaka output
+            elif 'resource_metadata.display_name' in r['metadata']:
+                name = r['metadata']['resource_metadata.display_name']
+            elif 'resource_metadata.name' in r['metadata']:
+                name = r['metadata']['resource_metadata.name']
             else:
                 name = r['resource_id']
             resource_map[r['resource_id']] = name
