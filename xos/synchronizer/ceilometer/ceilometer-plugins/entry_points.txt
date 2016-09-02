@@ -172,6 +172,8 @@ vcpe.dns.server.queries_sent= ceilometer.network.ext_services.vcpe.notifications
 vcpe.dns.server.queries_failed= ceilometer.network.ext_services.vcpe.notifications:VCPEDNSServerQueriesFailed
 volt.device= ceilometer.network.ext_services.volt.notifications:VOLTDeviceNotification
 volt.device.subscribers= ceilometer.network.ext_services.volt.notifications:VOLTDeviceSubscriberNotification
+broadview.bst.device=ceilometer.network.ext_services.broadview.notifications:BroadViewNotificationBase
+broadview.bst.ingress-port-priority-group=ceilometer.network.ext_services.broadview.notifications:BroadViewNotificationBase
 
 [ceilometer.poll.central]
 energy = ceilometer.energy.kwapi:EnergyPollster
