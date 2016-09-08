@@ -230,6 +230,7 @@ class Meters(object):
         self._vcpe_meters_info = self._get_vcpe_meters_info()
         self._volt_meters_info = self._get_volt_meters_info()
         self._sdn_meters_info = self._get_sdn_meters_info()
+        self._broadview_meters_info = self._get_broadview_meters_info()
 
         # Storing the meters info of all services together.
         all_services_meters = (self._nova_meters_info,
@@ -241,7 +242,8 @@ class Meters(object):
                                self._ipmi_meters_info,
                                self._vcpe_meters_info,
                                self._volt_meters_info,
-                               self._sdn_meters_info)
+                               self._sdn_meters_info,
+                               self._broadview_meters_info)
         self._all_meters_info = {}
         for service_meters in all_services_meters:
             self._all_meters_info.update(dict([(meter_name, meter_info)
@@ -361,6 +363,16 @@ class Meters(object):
         """
 
         return self._list(only_meters=self._sdn_meters_info.keys(),
+                          except_meters=except_meters)
+
+    def list_broadview(self, except_meters=None):
+        """Returns a list of meters tied to broadview service
+
+        :Parameters:
+          - `except_meters`: The list of meter names we don't want to show
+        """
+
+        return self._list(only_meters=self._broadview_meters_info.keys(),
                           except_meters=except_meters)
 
     def list_other_services(self, except_meters=None):
@@ -1073,6 +1085,64 @@ class Meters(object):
             }),
         ])
 
+    def _get_broadview_meters_info(self):
+        """Returns additional info for each meter
+
+        That will be used for augmenting the Ceilometer meter
+        """
+
+        # TODO(lsmola) Unless the Ceilometer will provide the information
+        # below, I need to define it as a static here. I will be joining this
+        # to info that I am able to obtain from Ceilometer meters, hopefully
+        # some day it will be supported all.
+        return datastructures.SortedDict([
+            ('broadview.bst.device', {
+                'type': _("BROADVIEW"),
+                'label': '',
+                'description': _("Existence of BST device"),
+            }),
+            ('broadview.bst.ingress-port-priority-group', {
+                'type': _("BROADVIEW"),
+                'label': '',
+                'description': _("Existence of BST device"),
+            }),
+            ('broadview.bst.ingress-port-service-pool', {
+                'type': _("BROADVIEW"),
+                'label': '',
+                'description': _("Existence of BST device"),
+            }),
+            ('broadview.bst.egress-cpu-queue', {
+                'type': _("BROADVIEW"),
+                'label': '',
+                'description': _("Existence of BST device"),
+            }),
+            ('broadview.bst.egress-mc-queue', {
+                'type': _("BROADVIEW"),
+                'label': '',
+                'description': _("Existence of BST device"),
+            }),
+            ('broadview.bst.egress-port-service-pool', {
+                'type': _("BROADVIEW"),
+                'label': '',
+                'description': _("Existence of BST device"),
+            }),
+            ('broadview.bst.egress-rqe-queue', {
+                'type': _("BROADVIEW"),
+                'label': '',
+                'description': _("Existence of BST device"),
+            }),
+            ('broadview.bst.egress-service-pool', {
+                'type': _("BROADVIEW"),
+                'label': '',
+                'description': _("Existence of BST device"),
+            }),
+            ('broadview.bst.egress-uc-queue', {
+                'type': _("BROADVIEW"),
+                'label': '',
+                'description': _("Existence of BST device"),
+            }),
+        ])
+
 def make_query(user_id=None, tenant_id=None, resource_id=None,
                user_ids=None, tenant_ids=None, resource_ids=None):
     """Returns query built from given parameters.
@@ -1174,6 +1244,7 @@ class MetersList(APIView):
             _('VSG'): meters.list_vcpe(),
             _('VOLT'): meters.list_volt(),
             _('SDN'): meters.list_sdn(),
+            _('BROADVIEW'): meters.list_broadview(),
         }
         meters = []
         for service,smeters in services.iteritems():
@@ -1245,6 +1316,7 @@ class MeterStatisticsList(APIView):
             _('VSG'): meters.list_vcpe(),
             _('VOLT'): meters.list_volt(),
             _('SDN'): meters.list_sdn(),
+            _('BROADVIEW'): meters.list_broadview(),
         }
         report_rows = []
         for service,meters in services.items():
@@ -1403,6 +1475,7 @@ class XOSInstanceStatisticsList(APIView):
                 _('VSG'): meters.list_vcpe(),
                 _('VOLT'): meters.list_volt(),
                 _('SDN'): meters.list_sdn(),
+                _('BROADVIEW'): meters.list_broadview(),
             }
             for service,meters in services.items():
                 for meter in meters:
