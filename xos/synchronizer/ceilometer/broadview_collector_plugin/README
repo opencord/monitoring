@@ -1,0 +1,41 @@
+1. Install broadview-lib:
+
+$ git clone https://github.com/openstack/broadview-lib.git 
+$ cd broadview-lib 
+$ sudo python setup.py install
+
+2. Install broadview-collector
+
+$ git clone https://github.com/openstack/broadview-collector.git 
+$ cd broadview-collector 
+$ sudo python setup.py install
+
+3. Copy the file ~/xos_services/monitoring/xos/synchronizer/ceilometer/broadview_collector_plugin/broadviewcollector.conf to /etc
+
+$ sudo cp ~/xos_services/monitoring/xos/synchronizer/ceilometer/broadview_collector_plugin/broadviewcollector.conf /etc
+
+4. Edit /etc/broadviewcollector.conf as needed
+
+$ sudo vi /etc/broadviewcollector.conf
+— Change the ip_address
+— Change the publishers to ceilometerpublisher
+— Change rabbit_host, rabbit_user, rabbit_password
+
+5. Copy broadview collector application to /usr/local/bin:
+
+$ sudo cp broadview_collector/bin/bvcollect.py /usr/local/bin 
+$ sudo chmod 755 /usr/local/bin/bvcollect.py
+
+6. Copy the ~/xos_services/monitoring/xos/synchronizer/ceilometer/broadview_collector_plugin/plugins/ceilometerpublisher.py to /usr/local/lib/python2.7/dist-packages/broadview_collector/plugins/
+
+$ sudo cp ~/xos_services/monitoring/xos/synchronizer/ceilometer/broadview_collector_plugin/plugins/ceilometerpublisher.py /usr/local/lib/python2.7/dist-packages/broadview_collector/plugins/
+
+7. Copy the ~/xos_services/monitoring/xos/synchronizer/ceilometer/broadview_collector_plugin/serializers/bst_to_ceilometer.py to /usr/local/lib/python2.7/dist-packages/broadview_collector/serializers/
+
+$ sudo cp ~/xos_services/monitoring/xos/synchronizer/ceilometer/broadview_collector_plugin/serializers/bst_to_ceilometer.py /usr/local/lib/python2.7/dist-packages/broadview_collector/serializers/
+
+8. Start the collector (assuming /usr/local/bin is in your PATH):
+
+$ sudo mkdir -p /var/log/broadview-collector/
+$ sudo bvcollect.py &
+

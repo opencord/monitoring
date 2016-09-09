@@ -67,7 +67,7 @@ def getTenantControllerTenantMap(user, slice=None):
     if not slice:
         #TEMPORARY WORK AROUND: There are some resource in network like whitebox switches does not belong to a specific tenant.
         #They are all associated with "default_admin_tenant" tenant
-        tenantmap["default_admin_tenant"] = {"slice": "default_admin_tenant", "service": "Other"}
+        tenantmap["default_admin_tenant"] = {"slice": "default_admin_tenant", "service": "NetworkInfra"}
     return tenantmap
 
 def build_url(path, q, params=None):

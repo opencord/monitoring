@@ -38,7 +38,7 @@ LOG = log.getLogger(__name__)
 class BroadViewNotificationBase(plugin_base.NotificationBase):
 
     resource_name = None
-    event_types = ['broadview.bst.*']
+    event_types = ['broadview.bst.*','broadview.pt.*']
 
     def get_targets(self,conf):
         """Return a sequence of oslo.messaging.Target
@@ -54,12 +54,16 @@ class BroadViewNotificationBase(plugin_base.NotificationBase):
     def process_notification(self, message):
         if message['payload']:
             resource_id = 'broadview_' + message["payload"]["asic-id"] 
+            volume = 1
+            if 'value' in message["payload"]:
+                if (not 'ignore-value' in message["payload"]) or (message["payload"]['ignore-value'] != 1):
+                    volume = message["payload"]["value"]
             LOG.info('SRIKANTH: Received BroadView %(event_type)s notification: resource_id=%(resource_id)s' % {'event_type': message['event_type'], 'resource_id': resource_id})
             yield sample.Sample.from_notification(
                 name=message['event_type'],
                 type=sample.TYPE_GAUGE,
                 unit='bv-agent',
-                volume=message['payload']['value'],
+                volume=volume,
                 user_id=None,
                 project_id='default_admin_tenant',
                 resource_id=resource_id,

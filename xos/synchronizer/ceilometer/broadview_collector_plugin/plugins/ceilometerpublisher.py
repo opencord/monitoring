@@ -19,6 +19,7 @@ import six
 import uuid
 import datetime
 from broadview_collector.serializers.bst_to_ceilometer import BSTToCeilometer
+from broadview_collector.serializers.pt_to_ceilometer import PTToCeilometer
 import json
 import ConfigParser
 import sys
@@ -75,9 +76,9 @@ class BroadViewPublisher(BroadViewPublisherBase):
             code = 200
         if self.isBST(data):
             success, sdata = BSTToCeilometer().serialize(host, data)
-        #elif self.isPT(data):
-        #    self._topic = "broadview-pt"
-        #    success, sdata = PTToMonasca().serialize(host, data)
+        elif self.isPT(data):
+            self._topic = "broadview-pt"
+            success, sdata = PTToCeilometer().serialize(host, data)
         else:
             success = False
         if success:
