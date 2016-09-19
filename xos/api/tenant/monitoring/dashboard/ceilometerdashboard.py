@@ -1141,6 +1141,21 @@ class Meters(object):
                 'label': '',
                 'description': _("Existence of BST device"),
             }),
+            ('broadview.pt.packet-trace-lag-resolution', {
+                'type': _("BROADVIEW"),
+                'label': '',
+                'description': _("Existence of BST device"),
+            }),
+            ('broadview.pt.packet-trace-ecmp-resolution', {
+                'type': _("BROADVIEW"),
+                'label': '',
+                'description': _("Existence of BST device"),
+            }),
+            ('broadview.pt.packet-trace-profile', {
+                'type': _("BROADVIEW"),
+                'label': '',
+                'description': _("Existence of BST device"),
+            }),
         ])
 
 def make_query(user_id=None, tenant_id=None, resource_id=None,
