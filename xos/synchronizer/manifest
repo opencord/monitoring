@@ -11,6 +11,7 @@ templates/start-monitoring-channel.sh.j2
 templates/monitoring-channel.conf.j2
 templates/ceilometer_proxy_server.py
 templates/start_ceilometer_proxy
+templates/update-keystone-endpoints.py.j2
 manifest
 run.sh
 monitoring_synchronizer_config
@@ -20,6 +21,8 @@ steps/sync_monitoringchannel.yaml
 steps/sync_monitoringchannel.py
 steps/sync_sflowservice.yaml
 steps/sync_sflowservice.py
+steps/sync_ceilometerservice.yaml
+steps/sync_ceilometerservice.py
 files/vm-resolv.conf
 files/docker.list
 model-deps

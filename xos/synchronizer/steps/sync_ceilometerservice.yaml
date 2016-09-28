@@ -1,0 +1,30 @@
+---
+# ceilometer_service_playbook
+- hosts: "{{ instance_name }}"
+  gather_facts: False
+  connection: ssh
+  user: ubuntu
+  sudo: yes
+  vars: 
+      host_name: {{ instance_hostname }} 
+      host_private_ip: {{ private_ip }}
+      host_nat_ip: {{ nat_ip }} 
+  tasks:
+
+  - name: Fix /etc/hosts
+    lineinfile:
+      dest=/etc/hosts
+      regexp="127.0.0.1 localhost"
+      line="127.0.0.1 localhost {{ instance_hostname }}"
+
+  - name : Adding Rabbitmq user
+    shell : rabbitmqctl add_user openstack "password";rabbitmqctl set_permissions openstack ".*" ".*" ".*"
+
+  - name: Coping keystone endpoint script
+    template: src=/opt/xos/synchronizers/monitoring/templates/update-keystone-endpoints.py.j2 dest=/usr/local/bin/update-keystone-endpoints.py owner=root group=root mode=0777
+
+  - name: Changing keystone public endpoint in mysql
+    shell: update-keystone-endpoints.py --username root --password password --host localhost --endpoint {{ private_ip }} --endpoint-type public
+
+  - name: Changing keystone admin endpoint in mysql
+    shell: update-keystone-endpoints.py --username root --password password --host localhost --endpoint {{ private_ip }} --endpoint-type admin 

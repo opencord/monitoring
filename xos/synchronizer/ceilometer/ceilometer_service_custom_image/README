@@ -17,7 +17,8 @@ Note: Can use virtual box also instead of virt-manger.
    ii.Update entry_point.txt:
        copy the contents of ceilometer_entry_points.txt to /usr/lib/python2.7/dist-packages/ceilometer-6.0.0.egg-info/entry_points.txt under [ceilometer.notification]
 9. Update /home/ubuntu/monitoring/xos/synchronizer/ceilometer/ceilometer_pub_sub/pub_sub.conf with proper IP and port numbers and rabbitmq credentials.
-10.update /etc/ceilmeter/pipeline.yaml with required publisher info for coressponding meters.
+10.
+  i.update /etc/ceilmeter/pipeline.yaml with required publisher info for coressponding meters.
    ex:
     sources:
     - name: meter_source
@@ -33,6 +34,9 @@ Note: Can use virtual box also instead of virt-manger.
       publishers:
           - notifier://
           - kafka://localhost:9092?topic=ceilometer 
+  ii.Please set the following config in /etc/ceilometer/ceilometer.conf
+   [api]
+   default_api_return_limit = 1000
   
 11.This setup by default created ceilometer topic for kafka.If any other topic is needed to use in this setup please
    create the topic before using it wih the following command.

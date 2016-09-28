@@ -19,6 +19,8 @@ class CeilometerService(Service):
     LOOK_FOR_IMAGES=[ "ceilometer-service-trusty-server-multi-nic",
                     ]
 
+    sync_attributes = ("private_ip", "private_mac",
+                       "nat_ip", "nat_mac", )
     class Meta:
         app_label = "monitoring"
         verbose_name = "Ceilometer Service"
