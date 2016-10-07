@@ -1,14 +1,6 @@
-import os
-import pdb
-import sys
-import tempfile
-sys.path.append("/opt/tosca")
-from translator.toscalib.tosca_template import ToscaTemplate
-
+from service import XOSService
 from core.models import ServiceAttribute
 from services.monitoring.models import SFlowService
-
-from service import XOSService
 
 class XOSSFlowService(XOSService):
     provides = "tosca.nodes.SFlowService"

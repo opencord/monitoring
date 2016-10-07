@@ -1,14 +1,5 @@
-import os
-import pdb
-import sys
-import tempfile
-sys.path.append("/opt/tosca")
-from translator.toscalib.tosca_template import ToscaTemplate
-import pdb
-
-from services.monitoring.models import MonitoringChannel, CeilometerService
-
 from xosresource import XOSResource
+from services.monitoring.models import MonitoringChannel, CeilometerService
 
 class XOSCeilometerTenant(XOSResource):
     provides = "tosca.nodes.CeilometerTenant"
