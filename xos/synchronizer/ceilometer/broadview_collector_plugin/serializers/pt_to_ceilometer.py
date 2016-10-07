@@ -15,11 +15,11 @@
 from broadviewserializerbase import BroadViewSerializerBase
 from broadview_lib.pt.pt_parser import PTParser, ReportTypes
 import json
-import six
-import uuid
 import unittest
 import datetime
 import time
+import six
+import uuid
 
 
 class PTToCeilometer(BroadViewSerializerBase):
@@ -38,7 +38,8 @@ class PTToCeilometer(BroadViewSerializerBase):
         #except:
         #    timestamp = int(time.mktime(datetime.datetime.utcnow().timetuple())) \
         #                * 1000 * 1000
-        timestamp=time.strftime('%Y-%m-%dT%H:%M:%SZ',data.getTimestamp())
+        #timestamp=time.strftime('%Y-%m-%dT%H:%M:%SZ',data.getTimestamp())
+        timestamp=datetime.datetime.now().isoformat()
         asic = data.getASICId()
 
         '''
