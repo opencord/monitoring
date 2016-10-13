@@ -1,5 +1,6 @@
 from django.db import models
-from core.models import Service, PlCoreBase, Slice, Instance, Tenant, TenantWithContainer, Node, Image, User, Flavor, Subscriber
+from django.core.validators import URLValidator
+from core.models import Service, PlCoreBase, Slice, Instance, Tenant, TenantWithContainer, Node, Image, User, Flavor, Subscriber, CoarseTenant, ServiceMonitoringAgentInfo
 from core.models.plcorebase import StrippedCharField
 import os
 from django.db import models, transaction
@@ -13,6 +14,11 @@ from sets import Set
 from urlparse import urlparse
 
 CEILOMETER_KIND = "ceilometer"
+#Ensure the length of name for 'kind' attribute is below 30
+CEILOMETER_PUBLISH_TENANT_KIND = "ceilo-publish-tenant"
+CEILOMETER_PUBLISH_TENANT_OS_KIND = "ceilo-os-publish-tenant"
+CEILOMETER_PUBLISH_TENANT_ONOS_KIND = "ceilo-onos-publish-tenant"
+CEILOMETER_PUBLISH_TENANT_USER_KIND = "ceilo-user-publish-tenant"
 
 class CeilometerService(Service):
     KIND = CEILOMETER_KIND
@@ -113,8 +119,48 @@ class CeilometerService(Service):
             return self.get_controller().admin_tenant
         return 'admin'
 
+    @property
+    def ceilometer_rabbit_compute_node(self):
+        if not self.get_instance():
+            return None
+        return self.get_instance().node.name
+
+    @property
+    def ceilometer_rabbit_host(self):
+        if not self.get_instance():
+            return None
+        return self.nat_ip
+
+    @property
+    def ceilometer_rabbit_user(self):
+        if not self.get_instance():
+            return None
+        return 'openstack'
+
+    @property
+    def ceilometer_rabbit_password(self):
+        if not self.get_instance():
+            return None
+        return 'password'
+
+    @property
+    def ceilometer_rabbit_uri(self):
+        if not self.get_instance():
+            return None
+        if not self.private_ip:
+            return None
+        return 'rabbit://openstack:password@' + self.private_ip + ':5672'
+
+    def delete(self, *args, **kwargs):
+        instance = self.get_instance()
+        if instance:
+            instance.delete()
+        super(CeilometerService, self).delete(*args, **kwargs)
+
+
 class MonitoringChannel(TenantWithContainer):   # aka 'CeilometerTenant'
     class Meta:
+        app_label = "monitoring"
         proxy = True
 
     KIND = CEILOMETER_KIND
@@ -151,7 +197,7 @@ class MonitoringChannel(TenantWithContainer):   # aka 'CeilometerTenant'
 
         if self.pk is None:
             #Allow only one monitoring channel per user
-            channel_count = sum ( [1 for channel in MonitoringChannel.objects.filter(kind=CEILOMETER_KIND) if (channel.creator == self.creator)] )
+            channel_count = sum ( [1 for channel in MonitoringChannel.get_tenant_objects().all() if (channel.creator == self.creator)] )
             if channel_count > 0:
                 raise XOSValidationError("Already %s channels exist for user Can only create max 1 MonitoringChannel instance per user" % str(channel_count))
 
@@ -293,6 +339,256 @@ def model_policy_monitoring_channel(pk):
         mc = mc[0]
         mc.manage_container()
 
+#@receiver(models.signals.post_delete, sender=MonitoringChannel)
+#def cleanup_monitoring_channel(sender, o, *args, **kwargs):
+#     #o.cleanup_container()
+#     #Temporary change only, remove the below code after testing
+#     if o.instance:
+#         o.instance.delete()
+#         o.instance = None
+
+class MonitoringPublisher(Tenant):
+    class Meta:
+        app_label = "monitoring"
+        proxy = True
+
+    KIND = CEILOMETER_PUBLISH_TENANT_KIND
+
+    default_attributes = {}
+    def __init__(self, *args, **kwargs):
+        ceilometer_services = CeilometerService.get_service_objects().all()
+        if ceilometer_services:
+            self._meta.get_field("provider_service").default = ceilometer_services[0].id
+        super(MonitoringPublisher, self).__init__(*args, **kwargs)
+
+    def can_update(self, user):
+        #Allow creation of this model instances for non-admin users also
+        return True
+
+    @property
+    def creator(self):
+        from core.models import User
+        if getattr(self, "cached_creator", None):
+            return self.cached_creator
+        creator_id=self.get_attribute("creator_id")
+        if not creator_id:
+            return None
+        users=User.objects.filter(id=creator_id)
+        if not users:
+            return None
+        user=users[0]
+        self.cached_creator = users[0]
+        return user
+
+    @creator.setter
+    def creator(self, value):
+        if value:
+            value = value.id
+        if (value != self.get_attribute("creator_id", None)):
+            self.cached_creator=None
+        self.set_attribute("creator_id", value)
+
+class OpenStackServiceMonitoringPublisher(MonitoringPublisher):
+    class Meta:
+        app_label = "monitoring"
+        proxy = True
+
+    KIND = CEILOMETER_PUBLISH_TENANT_OS_KIND
+
+    def __init__(self, *args, **kwargs):
+        super(OpenStackServiceMonitoringPublisher, self).__init__(*args, **kwargs)
+
+    def can_update(self, user):
+        #Don't allow creation of this model instances for non-admin users also
+        return False
+
+    def save(self, *args, **kwargs):
+        if not self.creator:
+            if not getattr(self, "caller", None):
+                # caller must be set when creating a monitoring channel since it creates a slice
+                raise XOSProgrammingError("OpenStackServiceMonitoringPublisher's self.caller was not set")
+            self.creator = self.caller
+            if not self.creator:
+                raise XOSProgrammingError("OpenStackServiceMonitoringPublisher's self.creator was not set")
+
+        if self.pk is None:
+            #Allow only one openstack monitoring publisher per admin user
+            publisher_count = sum ( [1 for ospublisher in OpenStackServiceMonitoringPublisher.get_tenant_objects().all() if (ospublisher.creator == self.creator)] )
+            if publisher_count > 0:
+                raise XOSValidationError("Already %s openstack publishers exist for user Can only create max 1 OpenStackServiceMonitoringPublisher instance per user" % str(publisher_count))
+
+        super(OpenStackServiceMonitoringPublisher, self).save(*args, **kwargs)
+
+class ONOSServiceMonitoringPublisher(MonitoringPublisher):
+    class Meta:
+        app_label = "monitoring"
+        proxy = True
+
+    KIND = CEILOMETER_PUBLISH_TENANT_ONOS_KIND
+
+    def __init__(self, *args, **kwargs):
+        super(ONOSServiceMonitoringPublisher, self).__init__(*args, **kwargs)
+
+    def can_update(self, user):
+        #Don't allow creation of this model instances for non-admin users also
+        return False
+
+    def save(self, *args, **kwargs):
+        if not self.creator:
+            if not getattr(self, "caller", None):
+                # caller must be set when creating a monitoring channel since it creates a slice
+                raise XOSProgrammingError("ONOSServiceMonitoringPublisher's self.caller was not set")
+            self.creator = self.caller
+            if not self.creator:
+                raise XOSProgrammingError("ONOSServiceMonitoringPublisher's self.creator was not set")
+
+        if self.pk is None:
+            #Allow only one openstack monitoring publisher per admin user
+            publisher_count = sum ( [1 for onospublisher in ONOSServiceMonitoringPublisher.get_tenant_objects().all() if (onospublisher.creator == self.creator)] )
+            if publisher_count > 0:
+                raise XOSValidationError("Already %s openstack publishers exist for user Can only create max 1 ONOSServiceMonitoringPublisher instance per user" % str(publisher_count))
+
+        super(ONOSServiceMonitoringPublisher, self).save(*args, **kwargs)
+
+class UserServiceMonitoringPublisher(MonitoringPublisher):
+    class Meta:
+        app_label = "monitoring"
+        proxy = True
+
+    KIND = CEILOMETER_PUBLISH_TENANT_USER_KIND
+
+    def __init__(self, *args, **kwargs):
+        self.cached_target_service = None
+        self.cached_tenancy_from_target_service = None
+        self.cached_service_monitoring_agent = None
+        super(UserServiceMonitoringPublisher, self).__init__(*args, **kwargs)
+
+    def can_update(self, user):
+        #Don't allow creation of this model instances for non-admin users also
+        return True
+
+    @property
+    def target_service(self):
+        if getattr(self, "cached_target_service", None):
+            return self.cached_target_service
+        target_service_id = self.get_attribute("target_service_id")
+        if not target_service_id:
+            return None
+        services = Service.objects.filter(id=target_service_id)
+        if not services:
+            return None
+        target_service = services[0]
+        self.cached_target_service = target_service
+        return target_service
+
+    @target_service.setter
+    def target_service(self, value):
+        if value:
+            value = value.id
+        if (value != self.get_attribute("target_service_id", None)):
+            self.cached_target_service = None
+        self.set_attribute("target_service_id", value)
+
+    @property
+    def tenancy_from_target_service(self):
+        if getattr(self, "cached_tenancy_from_target_service", None):
+            return self.cached_tenancy_from_target_service
+        tenancy_from_target_service_id = self.get_attribute("tenancy_from_target_service_id")
+        if not tenancy_from_target_service_id:
+            return None
+        tenancy_from_target_services = CoarseTenant.objects.filter(id=tenancy_from_target_service_id)
+        if not tenancy_from_target_services:
+            return None
+        tenancy_from_target_service = tenancy_from_target_services[0]
+        self.cached_tenancy_from_target_service = tenancy_from_target_service
+        return tenancy_from_target_service
+
+    @tenancy_from_target_service.setter
+    def tenancy_from_target_service(self, value):
+        if value:
+            value = value.id
+        if (value != self.get_attribute("tenancy_from_target_service_id", None)):
+            self.cached_tenancy_from_target_service = None
+        self.set_attribute("tenancy_from_target_service_id", value)
+
+    @property
+    def service_monitoring_agent(self):
+        if getattr(self, "cached_service_monitoring_agent", None):
+            return self.cached_service_monitoring_agent
+        service_monitoring_agent_id = self.get_attribute("service_monitoring_agent")
+        if not service_monitoring_agent_id:
+            return None
+        service_monitoring_agents = CoarseTenant.objects.filter(id=service_monitoring_agent_id)
+        if not service_monitoring_agents:
+            return None
+        service_monitoring_agent = service_monitoring_agents[0]
+        self.cached_service_monitoring_agent = service_monitoring_agent
+        return service_monitoring_agent
+
+    @service_monitoring_agent.setter
+    def service_monitoring_agent(self, value):
+        if value:
+            value = value.id
+        if (value != self.get_attribute("service_monitoring_agent", None)):
+            self.cached_service_monitoring_agent = None
+        self.set_attribute("service_monitoring_agent", value)
+
+    def save(self, *args, **kwargs):
+        if not self.creator:
+            if not getattr(self, "caller", None):
+                # caller must be set when creating a monitoring channel since it creates a slice
+                raise XOSProgrammingError("UserServiceMonitoringPublisher's self.caller was not set")
+            self.creator = self.caller
+            if not self.creator:
+                raise XOSProgrammingError("UserServiceMonitoringPublisher's self.creator was not set")
+
+        tenancy_from_target_service = None
+        if self.pk is None:
+            if self.target_service is None:
+                raise XOSValidationError("Target service is not specified in UserServiceMonitoringPublisher")
+            #Allow only one monitoring publisher for a given service 
+            publisher_count = sum ( [1 for publisher in UserServiceMonitoringPublisher.get_tenant_objects().all() if (publisher.target_service.id == self.target_service.id)] )
+            if publisher_count > 0:
+                raise XOSValidationError("Already %s publishers exist for service. Can only create max 1 UserServiceMonitoringPublisher instances" % str(publisher_count))
+            #Create Service composition object here
+            tenancy_from_target_service = CoarseTenant(provider_service = self.provider_service,
+                                                   subscriber_service = self.target_service)
+            tenancy_from_target_service.save()
+            self.tenancy_from_target_service = tenancy_from_target_service
+
+            target_uri = CeilometerService.objects.get(id=self.provider_service.id).ceilometer_rabbit_uri
+            if target_uri is None:
+                raise XOSProgrammingError("Unable to get the Target_URI for Monitoring Agent")
+            service_monitoring_agent = ServiceMonitoringAgentInfo(service = self.target_service,
+                                                               target_uri = target_uri)
+            service_monitoring_agent.save()
+            self.service_monitoring_agent = service_monitoring_agent
+        
+        try:
+            super(UserServiceMonitoringPublisher, self).save(*args, **kwargs)
+        except:
+            if tenancy_from_target_service:
+                tenancy_from_target_service.delete()
+            if service_monitoring_agent:
+                service_monitoring_agent.delete()
+            raise
+
+class InfraMonitoringAgentInfo(ServiceMonitoringAgentInfo):
+    class Meta:
+        app_label = "monitoring"
+    start_url = models.TextField(validators=[URLValidator()], help_text="URL/API to be used to start monitoring agent")
+    start_url_json_data = models.TextField(help_text="Metadata to be passed along with start API")
+    stop_url = models.TextField(validators=[URLValidator()], help_text="URL/API to be used to stop monitoring agent")
+    monitoring_publisher = models.ForeignKey(MonitoringPublisher, related_name="monitoring_agents", null=True, blank=True)
+
+class MonitoringCollectorPluginInfo(PlCoreBase):
+    class Meta:
+        app_label = "monitoring"
+    name = models.CharField(max_length=32)
+    plugin_folder_path = StrippedCharField(blank=True, null=True, max_length=1024, help_text="Path pointing to plugin files. e.g. /opt/xos/synchronizers/monitoring/ceilometer/ceilometer-plugins/network/ext_services/vsg/")
+    plugin_rabbit_exchange = StrippedCharField(blank=True, null=True, max_length=100) 
+    #plugin_notification_handlers_json = models.TextField(blank=True, null=True, help_text="Dictionary of notification handler classes. e.g {\"name\":\"plugin handler main class\"}")
+    monitoring_publisher = models.OneToOneField(MonitoringPublisher, related_name="monitoring_collector_plugin", null=True, blank=True)
 
 SFLOW_KIND = "sflow"
 SFLOW_PORT = 6343
@@ -402,7 +698,7 @@ class SFlowTenant(Tenant):
 
         if self.pk is None:
             #Allow only one sflow channel per user and listening_endpoint
-            channel_count = sum ( [1 for channel in SFlowTenant.objects.filter(kind=SFLOW_KIND) if ((channel.creator == self.creator) and (channel.listening_endpoint == self.listening_endpoint))] )
+            channel_count = sum ( [1 for channel in SFlowTenant.get_tenant_objects().all() if ((channel.creator == self.creator) and (channel.listening_endpoint == self.listening_endpoint))] )
             if channel_count > 0:
                 raise XOSValidationError("Already %s sflow channels exist for user Can only create max 1 tenant per user and listening endpoint" % str(channel_count))
 

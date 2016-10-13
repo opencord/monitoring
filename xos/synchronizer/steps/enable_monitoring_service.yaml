@@ -1,0 +1,27 @@
+---
+- hosts: 127.0.0.1
+  connection: local
+  gather_facts: False
+  user: ubuntu
+  vars:
+    monitoringagents: 
+        {% for agent in agents %}
+        - url: {{ agent.url }}
+          body: {{ agent.body }}
+        {% endfor %}
+
+  tasks:
+  - name: debug
+    debug: msg=" {{ '{{' }} item {{ '}}' }} "
+    with_items: " {{ '{{' }} monitoringagents {{ '}}' }} "
+    
+  - name:  starting openstack service monitoring agent
+    uri: 
+      url: "{{ '{{' }} item.url {{ '}}' }}"
+      method: POST
+      body: "{{ '{{' }} item.body {{ '}}' }}"
+      force_basic_auth: yes
+      status_code: 200
+      body_format: json
+    with_items: " {{ '{{' }} monitoringagents {{ '}}' }} "
+

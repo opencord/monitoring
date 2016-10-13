@@ -1,0 +1,24 @@
+---
+- hosts: '{{ instance_name }}'
+  gather_facts: False
+  connection: ssh
+  user: ubuntu
+  sudo: yes
+  tasks:
+  - name : starting onos service on {{ instance_name }}
+    uri:
+      url: http://{{ instance_name }}:5004/monitoring/agent/onos/start
+      method: POST
+      body: '{ "target":"udp://9.9.9.9:4455", "meta_data": { "resources": ["onos://10.11.10.60:8181?auth=basic&user=onos&password=rocks&scheme=http","onos://10.11.10.61:8181?auth=basic&user=onos&password=rocks&scheme=http"]}} '
+      force_basic_auth: yes
+      status_code: 200
+      body_format: json    
+  - name:  starting openstack service on {{ instance_name }}
+    uri: 
+      url: http://{{ instance_name }}:5004/monitoring/agent/openstack/start
+      method: POST
+      body: '"target":"udp://9.9.9.9:4455"'
+      force_basic_auth: yes
+      status_code: 200
+      body_format: json
+

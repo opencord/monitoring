@@ -1,0 +1,79 @@
+---
+- hosts: '{{ instance_name }}'
+  gather_facts: False
+  connection: ssh
+  user: ubuntu
+  sudo: yes
+
+  tasks:
+
+  - name: Installing python-dev
+    apt: name=python-dev state=present update_cache=yes
+
+  - name: Installing Flask
+    pip: name=Flask
+
+  - name: Verify if  ([monitoring_agent] is to avoid capturing the shell process) is already running
+    shell: pgrep -f [m]onitoring_agent | wc -l
+    register: monitoringagent_job_pids_count
+
+  - name: DEBUG
+    debug: var=monitoringagent_job_pids_count.stdout
+
+  - name: stop /usr/local/share/monitoring_agent if already running
+    shell: pkill -f /usr/local/share/monitoring_agent/monitoring_agent.py
+    ignore_errors: True
+    when:  monitoringagent_job_pids_count.stdout !=  "0"
+
+  - name: Deleting monitoring agent folder(if already exists)
+    file: path=/usr/local/share/monitoring_agent state=absent owner=root group=root
+
+  - name: make sure /usr/local/share/monitoring_agent exists
+    file: path=/usr/local/share/monitoring_agent state=directory owner=root group=root
+
+  - name: Copying monitoring agent conf file
+    when : "'ceilometer' in instance_name"
+    set_fact: ceilometer_services="ceilometer-agent-central,ceilometer-agent-notification,ceilometer-collector,ceilometer-api"
+
+  - name: Copying monitoring agent conf file
+    when : "'ceilometer' not in instance_name"
+    set_fact: ceilometer_services="ceilometer-agent-compute"
+
+  - name : DEBUG
+    debug: var=ceilometer_services
+
+  - name: Copying monitoring agent conf file  
+    template: src=monitoring_agent.conf.j2 dest=/usr/local/share/monitoring_agent/monitoring_agent.conf  mode=0777 
+
+  - name: Copying file to /usr/local/share
+    copy: src=monitoring_agent.py dest=/usr/local/share/monitoring_agent/monitoring_agent.py mode=0777
+
+  - name: Copying file to /usr/local/share
+    copy: src=generate_pipeline.py dest=/usr/local/share/monitoring_agent/generate_pipeline.py mode=0777
+
+  - name: Copying file to /usr/local/share
+    copy: src=pipeline.yaml.j2 dest=/usr/local/share/monitoring_agent/pipeline.yaml.j2 mode=0777
+ 
+  - name: Copying file to /usr/local/share
+    copy: src=start_monitoring_agent.sh dest=/usr/local/share/monitoring_agent/start_monitoring_agent.sh mode=0777
+
+  - name: Starting monitoring agent
+    command: nohup python /usr/local/share/monitoring_agent/monitoring_agent.py &
+    args:
+       chdir: /usr/local/share/monitoring_agent/
+    async: 9999999999999999
+    poll: 0
+ 
+  - name: Configuring monitoring agent
+    shell: /usr/local/share/monitoring_agent/start_monitoring_agent.sh
+
+#TODO: 
+#Copy ONOS notification handlers 
+#from ~/xos_services/monitoring/xos/synchronizer/ceilometer/ceilometer-plugins/network/statistics/onos
+#to /usr/lib/python2.7/dist-packages/ceilometer/network/statistics/onos in the headnode ceilometer node
+#Copy a file from ~/xos_services/monitoring/xos/synchronizer/ceilometer/ceilometer-plugins/network/statistics/__init__.py
+#to /usr/lib/python2.7/dist-packages/ceilometer/network/statistics/ folder 
+#Also, update the entry_points.txt with the following changes:
+#[network.statistics.drivers]
+#....
+#onos = ceilometer.network.statistics.onos.driver:ONOSDriver

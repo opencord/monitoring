@@ -1,0 +1,9 @@
+Sample curl commands to test Monitoring agent:
+---------------------------------------------
+curl -i -H "Content-Type: application/json" -X POST -d '{"target":"udp://9.9.9.9:4455", "meta_data": { "resources": ["onos://10.11.10.60:8181?auth=basic&user=onos&password=rocks&scheme=http","onos://10.11.10.61:8181?auth=basic&user=onos&password=rocks&scheme=http"]}}' -L http://nova-compute-1:5004/monitoring/agent/onos/start
+
+curl -i -H "Content-Type: application/json" -X POST -d '{"target":"udp://9.9.9.9:4455"}' -L http://nova-compute-1:5004/monitoring/agent/openstack/start
+
+curl -i -H "Content-Type: application/json" -X POST -d '{"target":"udp://9.9.9.9:4455"}' -L http://nova-compute-1:5004/monitoring/agent/openstack/stop
+
+curl -i -H "Content-Type: application/json" -X POST -d '{"target":"udp://9.9.9.9:4455", "meta_data": { "resources": ["onos://10.11.10.60:8181?auth=basic&user=onos&password=rocks&scheme=http","onos://10.11.10.61:8181?auth=basic&user=onos&password=rocks&scheme=http"]}}' -L http://nova-compute-1:5004/monitoring/agent/onos/stop

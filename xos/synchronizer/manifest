@@ -12,6 +12,12 @@ templates/monitoring-channel.conf.j2
 templates/ceilometer_proxy_server.py
 templates/start_ceilometer_proxy
 templates/update-keystone-endpoints.py.j2
+ceilometer/udp_proxy/udpagent.py
+templates/udpagent.conf.j2
+ceilometer/ceilometer-plugins/network/ext_services/openstack_infra/notifications.py
+ceilometer/ceilometer-plugins/network/ext_services/openstack_infra/__init__.py
+ceilometer/ceilometer-plugins/network/ext_services/vcpe/notifications.py
+ceilometer/ceilometer-plugins/network/ext_services/vcpe/__init__.py
 manifest
 run.sh
 monitoring_synchronizer_config
@@ -23,6 +29,9 @@ steps/sync_sflowservice.yaml
 steps/sync_sflowservice.py
 steps/sync_ceilometerservice.yaml
 steps/sync_ceilometerservice.py
+steps/sync_openstackmonitoringpublisher.py
+steps/sync_openstackmonitoringpublisher.yaml
+steps/enable_monitoring_service.yaml
 files/vm-resolv.conf
 files/docker.list
 model-deps

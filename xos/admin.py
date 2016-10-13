@@ -10,7 +10,7 @@ from django.contrib.auth.signals import user_logged_in
 from django.utils import timezone
 from django.contrib.contenttypes import generic
 from suit.widgets import LinkedSelect
-from core.admin import ServiceAppAdmin,SliceInline,ServiceAttrAsTabInline, ReadOnlyAwareAdmin, XOSTabularInline, ServicePrivilegeInline, TenantRootTenantInline, TenantRootPrivilegeInline, TenantAttrAsTabInline
+from core.admin import XOSBaseAdmin,ServiceAppAdmin,SliceInline,ServiceAttrAsTabInline, ReadOnlyAwareAdmin, XOSTabularInline, ServicePrivilegeInline, TenantRootTenantInline, TenantRootPrivilegeInline, TenantAttrAsTabInline, UploadTextareaWidget
 from core.middleware import get_request
 
 from functools import update_wrapper
@@ -59,6 +59,18 @@ class CeilometerServiceAdmin(ReadOnlyAwareAdmin):
 
     suit_form_includes = (('ceilometeradmin.html', 'top', 'administration'),
                            )
+    #actions=['delete_selected_objects']
+
+    #def get_actions(self, request):
+    #    actions = super(CeilometerServiceAdmin, self).get_actions(request)
+    #    if 'delete_selected' in actions:
+    #        del actions['delete_selected']
+    #    return actions
+
+    #def delete_selected_objects(self, request, queryset):
+    #    for obj in queryset:
+    #        obj.delete()
+    #delete_selected_objects.short_description = "Delete Selected Ceilometer Service Objects"
 
     def get_queryset(self, request):
         return CeilometerService.get_service_objects_by_user(request.user)
@@ -100,18 +112,18 @@ class MonitoringChannelAdmin(ReadOnlyAwareAdmin):
     form = MonitoringChannelForm
 
     suit_form_tabs = (('general','Details'),)
-    actions=['delete_selected_objects']
+    #actions=['delete_selected_objects']
 
-    def get_actions(self, request):
-        actions = super(MonitoringChannelAdmin, self).get_actions(request)
-        if 'delete_selected' in actions:
-            del actions['delete_selected']
-        return actions
+    #def get_actions(self, request):
+    #    actions = super(MonitoringChannelAdmin, self).get_actions(request)
+    #    if 'delete_selected' in actions:
+    #        del actions['delete_selected']
+    #    return actions
 
-    def delete_selected_objects(self, request, queryset):
-        for obj in queryset:
-            obj.delete()
-    delete_selected_objects.short_description = "Delete Selected MonitoringChannel Objects"
+    #def delete_selected_objects(self, request, queryset):
+    #    for obj in queryset:
+    #        obj.delete()
+    #delete_selected_objects.short_description = "Delete Selected MonitoringChannel Objects"
 
     def get_queryset(self, request):
         return MonitoringChannel.get_tenant_objects_by_user(request.user)
@@ -211,8 +223,204 @@ class SFlowTenantAdmin(ReadOnlyAwareAdmin):
     def get_queryset(self, request):
         return SFlowTenant.get_tenant_objects_by_user(request.user)
 
+class OpenStackServiceMonitoringPublisherForm(forms.ModelForm):
+    creator = forms.ModelChoiceField(queryset=User.objects.all())
+
+    def __init__(self,*args,**kwargs):
+        super (OpenStackServiceMonitoringPublisherForm,self ).__init__(*args,**kwargs)
+        self.fields['kind'].widget.attrs['readonly'] = True
+        self.fields['provider_service'].queryset = CeilometerService.get_service_objects().all()
+        if self.instance:
+            # fields for the attributes
+            self.fields['creator'].initial = self.instance.creator
+        if (not self.instance) or (not self.instance.pk):
+            # default fields for an 'add' form
+            self.fields['kind'].initial = CEILOMETER_PUBLISH_TENANT_OS_KIND
+            self.fields['creator'].initial = get_request().user
+            if CeilometerService.get_service_objects().exists():
+               self.fields["provider_service"].initial = CeilometerService.get_service_objects().all()[0]
+
+    def save(self, commit=True):
+        self.instance.creator = self.cleaned_data.get("creator")
+        return super(OpenStackServiceMonitoringPublisherForm, self).save(commit=commit)
+
+    class Meta:
+        model = OpenStackServiceMonitoringPublisher
+        fields = '__all__'
+
+class OpenStackServiceMonitoringPublisherAdmin(ReadOnlyAwareAdmin):
+    list_display = ('backend_status_icon', 'id', )
+    list_display_links = ('backend_status_icon', 'id')
+    fieldsets = [ (None, {'fields': ['backend_status_text', 'kind', 'provider_service', 'service_specific_attribute', 'creator'],
+                          'classes':['suit-tab suit-tab-general']})]
+    readonly_fields = ('backend_status_text', 'service_specific_attribute' )
+    form = OpenStackServiceMonitoringPublisherForm
+
+    suit_form_tabs = (('general','Details'),)
+    actions=['delete_selected_objects']
+
+    def get_actions(self, request):
+        actions = super(OpenStackServiceMonitoringPublisherAdmin, self).get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
+
+    def delete_selected_objects(self, request, queryset):
+        for obj in queryset:
+            obj.delete()
+    delete_selected_objects.short_description = "Delete Selected OpenStackServiceMonitoringPublisher Objects"
+
+    def get_queryset(self, request):
+        return OpenStackServiceMonitoringPublisher.get_tenant_objects_by_user(request.user)
+
+class ONOSServiceMonitoringPublisherForm(forms.ModelForm):
+    creator = forms.ModelChoiceField(queryset=User.objects.all())
+    onos_service_endpoints = forms.CharField(max_length=1024, help_text="IP addresses of all the ONOS services to be monitored")
+
+    def __init__(self,*args,**kwargs):
+        super (ONOSServiceMonitoringPublisherForm,self ).__init__(*args,**kwargs)
+        self.fields['kind'].widget.attrs['readonly'] = True
+        self.fields['provider_service'].queryset = CeilometerService.get_service_objects().all()
+        if self.instance:
+            # fields for the attributes
+            self.fields['creator'].initial = self.instance.creator
+            self.fields['onos_service_endpoints'].initial = self.instance.onos_service_endpoints
+        if (not self.instance) or (not self.instance.pk):
+            # default fields for an 'add' form
+            self.fields['kind'].initial = CEILOMETER_PUBLISH_TENANT_ONOS_KIND
+            self.fields['creator'].initial = get_request().user
+            if CeilometerService.get_service_objects().exists():
+               self.fields["provider_service"].initial = CeilometerService.get_service_objects().all()[0]
+
+    def save(self, commit=True):
+        self.instance.creator = self.cleaned_data.get("creator")
+        self.instance.onos_service_endpoints = self.cleaned_data.get("onos_service_endpoints")
+        return super(ONOSServiceMonitoringPublisherForm, self).save(commit=commit)
+
+    class Meta:
+        model = ONOSServiceMonitoringPublisher
+        fields = '__all__'
+
+class ONOSServiceMonitoringPublisherAdmin(ReadOnlyAwareAdmin):
+    list_display = ('backend_status_icon', 'id', )
+    list_display_links = ('backend_status_icon', 'id')
+    fieldsets = [ (None, {'fields': ['backend_status_text', 'kind', 'provider_service', 'service_specific_attribute', 'creator', 'onos_service_endpoints'],
+                          'classes':['suit-tab suit-tab-general']})]
+    readonly_fields = ('backend_status_text', 'service_specific_attribute' )
+    form = ONOSServiceMonitoringPublisherForm
+
+    suit_form_tabs = (('general','Details'),)
+    actions=['delete_selected_objects']
+
+    def get_actions(self, request):
+        actions = super(ONOSServiceMonitoringPublisherAdmin, self).get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
+
+    def delete_selected_objects(self, request, queryset):
+        for obj in queryset:
+            obj.delete()
+    delete_selected_objects.short_description = "Delete Selected OpenStackServiceMonitoringPublisher Objects"
+
+    def get_queryset(self, request):
+        return ONOSServiceMonitoringPublisher.get_tenant_objects_by_user(request.user)
+
+class UserServiceMonitoringPublisherForm(forms.ModelForm):
+    creator = forms.ModelChoiceField(queryset=User.objects.all())
+    exclude_service_list = ['ceilometer', 'onos', 'VTN', 'vROUTER', 'vOLT', 'vTR']
+    target_service = forms.ModelChoiceField(queryset=Service.objects.all().exclude(kind__in=exclude_service_list))
+
+    def __init__(self,*args,**kwargs):
+        super (UserServiceMonitoringPublisherForm,self ).__init__(*args,**kwargs)
+        self.fields['kind'].widget.attrs['readonly'] = True
+        self.fields['provider_service'].queryset = CeilometerService.get_service_objects().all()
+        if self.instance:
+            # fields for the attributes
+            self.fields['creator'].initial = self.instance.creator
+            self.fields['target_service'].initial = self.instance.target_service
+        if (not self.instance) or (not self.instance.pk):
+            # default fields for an 'add' form
+            self.fields['kind'].initial = CEILOMETER_PUBLISH_TENANT_USER_KIND
+            self.fields['creator'].initial = get_request().user
+            if CeilometerService.get_service_objects().exists():
+               self.fields["provider_service"].initial = CeilometerService.get_service_objects().all()[0]
+
+    def save(self, commit=True):
+        self.instance.creator = self.cleaned_data.get("creator")
+        self.instance.target_service = self.cleaned_data.get("target_service")
+        return super(UserServiceMonitoringPublisherForm, self).save(commit=commit)
+
+    class Meta:
+        model = UserServiceMonitoringPublisher
+        fields = '__all__'
+
+class UserServiceMonitoringPublisherAdmin(ReadOnlyAwareAdmin):
+    list_display = ('backend_status_icon', 'id', )
+    list_display_links = ('backend_status_icon', 'id')
+    fieldsets = [ (None, {'fields': ['backend_status_text', 'kind', 'provider_service', 'service_specific_attribute', 'creator', 'target_service'],
+                          'classes':['suit-tab suit-tab-general']})]
+    readonly_fields = ('backend_status_text', 'service_specific_attribute' )
+    form = UserServiceMonitoringPublisherForm
+
+    suit_form_tabs = (('general','Details'),)
+    actions=['delete_selected_objects']
+
+    def get_actions(self, request):
+        actions = super(UserServiceMonitoringPublisherAdmin, self).get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
+
+    def delete_selected_objects(self, request, queryset):
+        for obj in queryset:
+            obj.delete()
+    delete_selected_objects.short_description = "Delete Selected UserServiceMonitoringPublisher Objects"
+
+    def get_queryset(self, request):
+        return UserServiceMonitoringPublisher.get_tenant_objects_by_user(request.user)
+
+class InfraMonitoringAgentInfoForm(forms.ModelForm):
+    class Meta:
+        model = InfraMonitoringAgentInfo
+        widgets = {
+            'start_url_json_data': UploadTextareaWidget(attrs={'rows': 5, 'cols': 80, 'class': "input-xxlarge"}),
+        }
+        fields = '__all__'
+
+class InfraMonitoringAgentInfoAdmin(XOSBaseAdmin):
+    list_display = ('backend_status_icon', 'name', 'id', )
+    list_display_links = ('backend_status_icon', 'name', 'id')
+    fieldsets = [ (None, {'fields': ['name', 'start_url', 'start_url_json_data', 'stop_url', 'monitoring_publisher'],
+                          'classes':['suit-tab suit-tab-general']})]
+    form = InfraMonitoringAgentInfoForm
+
+    suit_form_tabs = (('general','Details'),)
+
+class MonitoringCollectorPluginInfoForm(forms.ModelForm):
+    class Meta:
+        model = MonitoringCollectorPluginInfo
+        #widgets = {
+        #    'plugin_notification_handlers_json': UploadTextareaWidget(attrs={'rows': 5, 'cols': 80, 'class': "input-xxlarge"}),
+        #}
+        fields = '__all__'
+
+class MonitoringCollectorPluginInfoAdmin(XOSBaseAdmin):
+    list_display = ('backend_status_icon', 'name', 'id', )
+    list_display_links = ('backend_status_icon', 'name', 'id')
+    fieldsets = [ (None, {'fields': ['name', 'plugin_folder_path', 'plugin_rabbit_exchange', 'monitoring_publisher'],
+                          'classes':['suit-tab suit-tab-general']})]
+    form = MonitoringCollectorPluginInfoForm
+
+    suit_form_tabs = (('general','Details'),)
+
 admin.site.register(CeilometerService, CeilometerServiceAdmin)
 admin.site.register(SFlowService, SFlowServiceAdmin)
 admin.site.register(MonitoringChannel, MonitoringChannelAdmin)
 admin.site.register(SFlowTenant, SFlowTenantAdmin)
+admin.site.register(OpenStackServiceMonitoringPublisher, OpenStackServiceMonitoringPublisherAdmin)
+admin.site.register(ONOSServiceMonitoringPublisher, ONOSServiceMonitoringPublisherAdmin)
+admin.site.register(UserServiceMonitoringPublisher, UserServiceMonitoringPublisherAdmin)
+admin.site.register(InfraMonitoringAgentInfo, InfraMonitoringAgentInfoAdmin)
+admin.site.register(MonitoringCollectorPluginInfo, MonitoringCollectorPluginInfoAdmin)
 

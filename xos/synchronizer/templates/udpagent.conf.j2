@@ -1,0 +1,30 @@
+[udpservice]
+udp_address = {{ listen_ip_addr }}
+udp_port = 4455
+rabbit_userid = {{ rabbit_user }}
+rabbit_password = {{ rabbit_password }}
+rabbit_hosts = {{ rabbit_host }}
+acord_control_exchange = openstack_infra
+
+[loggers]
+keys=root
+
+[handlers]
+keys=logfile
+
+[formatters]
+keys=logfileformatter
+
+[logger_root]
+level=INFO
+#level=DEBUG
+handlers=logfile
+
+[formatter_logfileformatter]
+format='%(asctime)s %(filename)s %(levelname)s %(message)s'
+
+[handler_logfile]
+class=handlers.RotatingFileHandler
+level=NOTSET
+args=('udpagent.log','a',1000000,100)
+formatter=logfileformatter

@@ -23,6 +23,10 @@ sys.path.insert(0,parentdir)
 
 logger = Logger(level=logging.INFO)
 
+#FIXME: Is this right approach?
+#Maintaining a global SSH tunnel database in order to handle tunnel deletions during the object delete
+ssh_tunnel_db = {}
+
 class SSHTunnel:
 
     def __init__(self, localip, localport, key, remoteip, remote_port, jumpuser, jumphost):
@@ -147,7 +151,7 @@ class SyncMonitoringChannel(SyncInstanceUsingAnsible):
            #Check if ssh tunnel is needed
            proxy_ssh = getattr(Config(), "observer_proxy_ssh", False)
 
-           if proxy_ssh:
+           if proxy_ssh and (not o.ssh_proxy_tunnel):
                proxy_ssh_key = getattr(Config(), "observer_proxy_ssh_key", None)
                proxy_ssh_user = getattr(Config(), "observer_proxy_ssh_user", "root")
                jump_hostname = fields["hostname"]
@@ -159,16 +163,12 @@ class SyncMonitoringChannel(SyncInstanceUsingAnsible):
                local_port = remote_port
                local_ip = socket.gethostbyname(socket.gethostname())
 
-#               tunnel = SSHTunnelForwarder(jump_hostname,
-#                                      ssh_username=proxy_ssh_user,
-#                                      ssh_pkey=proxy_ssh_key,
-#                                      ssh_private_key_password="",
-#                                      remote_bind_address=(remote_host,remote_port),
-#                                      local_bind_address=(local_ip,local_port),
-#                                      set_keepalive=300)
-#               tunnel.start()
                tunnel = SSHTunnel(local_ip, local_port, proxy_ssh_key, remote_host, remote_port, proxy_ssh_user, jump_hostname)
                tunnel.start()
+               logger.info("SSH Tunnel created for Monitoring channel-%s at local port:%s"%(o.id,local_port))
+
+               #FIXME:Store the tunnel handle in global tunnel database
+               ssh_tunnel_db[o.id] = tunnel
 
                #Update the model with ssh tunnel info
                o.ssh_proxy_tunnel = True
@@ -185,6 +185,14 @@ class SyncMonitoringChannel(SyncInstanceUsingAnsible):
         #if quick_update:
         #    logger.info("quick_update triggered; skipping ansible recipe")
         #else:
+        if ('delete' in fields) and (fields['delete']):
+            logger.info("Delete for Monitoring channel-%s is getting synchronized"%(o.id))
+            if o.id in ssh_tunnel_db:
+                tunnel = ssh_tunnel_db[o.id]
+                tunnel.stop()
+                logger.info("Deleted SSH Tunnel for Monitoring channel-%s at local port:%s"%(o.id,o.ssh_tunnel_port))
+                o.ssh_proxy_tunnel = False
+                del ssh_tunnel_db[o.id]
         super(SyncMonitoringChannel, self).run_playbook(o, fields)
 
         #o.last_ansible_hash = ansible_hash

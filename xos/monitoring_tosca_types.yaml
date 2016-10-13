@@ -1,0 +1,243 @@
+tosca_definitions_version: tosca_simple_yaml_1_0
+
+# compile this with "m4 monitoring_custom_tosca_types.m4 > monitoring_custom_tosca_types.yaml"
+
+# include macros
+# Note: Tosca derived_from isn't working the way I think it should, it's not
+#    inheriting from the parent template. Until we get that figured out, use
+#    m4 macros do our inheritance
+
+
+# Service
+
+
+# Subscriber
+
+
+
+
+# end m4 macros
+
+
+
+node_types:
+    tosca.nodes.SFlowService:
+        derived_from: tosca.nodes.Root
+        description: >
+            XOS SFlow Collection Service
+        capabilities:
+            scalable:
+                type: tosca.capabilities.Scalable
+            service:
+                type: tosca.capabilities.xos.Service
+        properties:
+            no-delete:
+                type: boolean
+                default: false
+                description: Do not allow Tosca to delete this object
+            no-create:
+                type: boolean
+                default: false
+                description: Do not allow Tosca to create this object
+            no-update:
+                type: boolean
+                default: false
+                description: Do not allow Tosca to update this object
+            kind:
+                type: string
+                default: generic
+                description: Type of service.
+            view_url:
+                type: string
+                required: false
+                description: URL to follow when icon is clicked in the Service Directory.
+            icon_url:
+                type: string
+                required: false
+                description: ICON to display in the Service Directory.
+            enabled:
+                type: boolean
+                default: true
+            published:
+                type: boolean
+                default: true
+                description: If True then display this Service in the Service Directory.
+            public_key:
+                type: string
+                required: false
+                description: Public key to install into Instances to allows Services to SSH into them.
+            private_key_fn:
+                type: string
+                required: false
+                description: Location of private key file
+            versionNumber:
+                type: string
+                required: false
+                description: Version number of Service.
+            sflow_port:
+              type: integer
+              required: false
+              default: 6343
+              description: sFlow listening port
+            sflow_api_port:
+              type: integer
+              required: false
+              default: 33333
+              description: sFlow publish subscribe api listening port
+
+    tosca.nodes.CeilometerService:
+        derived_from: tosca.nodes.Root
+        description: >
+            XOS Ceilometer Service
+        capabilities:
+            scalable:
+                type: tosca.capabilities.Scalable
+            service:
+                type: tosca.capabilities.xos.Service
+        properties:
+            no-delete:
+                type: boolean
+                default: false
+                description: Do not allow Tosca to delete this object
+            no-create:
+                type: boolean
+                default: false
+                description: Do not allow Tosca to create this object
+            no-update:
+                type: boolean
+                default: false
+                description: Do not allow Tosca to update this object
+            kind:
+                type: string
+                default: generic
+                description: Type of service.
+            view_url:
+                type: string
+                required: false
+                description: URL to follow when icon is clicked in the Service Directory.
+            icon_url:
+                type: string
+                required: false
+                description: ICON to display in the Service Directory.
+            enabled:
+                type: boolean
+                default: true
+            published:
+                type: boolean
+                default: true
+                description: If True then display this Service in the Service Directory.
+            public_key:
+                type: string
+                required: false
+                description: Public key to install into Instances to allows Services to SSH into them.
+            private_key_fn:
+                type: string
+                required: false
+                description: Location of private key file
+            versionNumber:
+                type: string
+                required: false
+                description: Version number of Service.
+            ceilometer_pub_sub_url:
+                type: string
+                required: false
+                description: REST URL of ceilometer PUB/SUB component
+
+    tosca.nodes.CeilometerTenant:
+        derived_from: tosca.nodes.Root
+        description: >
+            CORD: A Tenant of the Ceilometer Service.
+        properties:
+            kind:
+                type: string
+                default: generic
+                description: Kind of tenant
+
+    tosca.nodes.InfraMonitoringAgentInfo:
+        derived_from: tosca.nodes.Root
+        description: >
+            Infra Monitoring agent info
+        capabilities:
+            inframonitoringagentinfo:
+                type: tosca.capabilities.xos.InfraMonitoringAgentInfo
+        properties:
+            start_url:
+                type: string
+                required: true
+                description: REST URL to be invoked to start monitoring agent
+            start_url_json_data:
+                type: string
+                required: false
+                description: Meta data to be sent along with start API
+            stop_url:
+                type: string
+                required: true
+                description: REST URL to be invoked to stop monitoring agent
+
+    tosca.relationships.ProvidesInfraMonitoringAgentInfo:
+        derived_from: tosca.relationships.Root
+        valid_target_types: [ tosca.capabilities.xos.InfraMonitoringAgentInfo ]
+
+    tosca.capabilities.xos.InfraMonitoringAgentInfo:
+        derived_from: tosca.capabilities.Root
+        description: An XOS Infra MonitoringAgentInfo
+
+    tosca.nodes.MonitoringCollectorPluginInfo:
+        derived_from: tosca.nodes.Root
+        description: >
+            Monitoring collector plugin info
+        capabilities:
+            monitoringcollectorplugininfo:
+                type: tosca.capabilities.xos.MonitoringCollectorPluginInfo
+        properties:
+            plugin_folder_path:
+                type: string
+                required: true
+                description: Folder path pointing to plugin files. 
+            plugin_rabbit_exchange:
+                type: string
+                required: true
+                description: RabbitMQ exchange used by Monitoring collector notification plugin
+
+    tosca.relationships.ProvidesMonitoringCollectorPluginInfo:
+        derived_from: tosca.relationships.Root
+        valid_target_types: [ tosca.capabilities.xos.MonitoringCollectorPluginInfo ]
+
+    tosca.capabilities.xos.MonitoringCollectorPluginInfo:
+        derived_from: tosca.capabilities.Root
+        description: An XOS MonitoringCollectorPluginInfo
+
+    tosca.nodes.OpenStackMonitoringPublisher:
+        derived_from: tosca.nodes.Root
+        description: >
+            A OpenStack Publish Tenant of the Monitoring service
+        properties:
+            kind:
+                type: string
+                default: generic
+                description: Kind of tenant
+
+    tosca.nodes.ONOSMonitoringPublisher:
+        derived_from: tosca.nodes.Root
+        description: >
+            A ONOS Publish Tenant of the Monitoring service
+        properties:
+            kind:
+                type: string
+                default: generic
+                description: Kind of tenant
+
+    tosca.relationships.PublishesMonitoringData:
+        derived_from: tosca.relationships.Root
+        valid_target_types: [ tosca.capabilities.xos.Service ]
+
+    tosca.nodes.UserServiceMonitoringPublisher:
+        derived_from: tosca.nodes.Root
+        description: >
+            A Publish Tenant of the Monitoring service user defined services
+        properties:
+            kind:
+                type: string
+                default: generic
+                description: Kind of tenant
+

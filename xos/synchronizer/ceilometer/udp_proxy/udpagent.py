@@ -39,6 +39,10 @@ class UdpService():
         event_data = {'event_type': 'infra','message_id':six.text_type(uuid.uuid4()),'publisher_id': 'cpe_publisher_id','timestamp':datetime.datetime.now().isoformat(),'priority':'INFO','payload':msg}
         return event_data
    
+    def errback(self, exc, interval):
+        logging.error('Error: %r', exc, exc_info=1)
+        logging.info('Retry in %s seconds.', interval)
+
     def setup_rabbit_mq_channel(self):
         service_exchange = Exchange(self.acord_control_exchange, "topic", durable=False)
         # connections/channels
@@ -47,6 +51,8 @@ class UdpService():
         channel = connection.channel()
         # produce
         self.producer = Producer(channel, exchange=service_exchange, routing_key='notifications.info')
+        self.publish = connection.ensure(self.producer, self.producer.publish, errback=self.errback, max_retries=3)
+
 
     def start_udp(self):
         address_family = socket.AF_INET
@@ -70,12 +76,16 @@ class UdpService():
             else:
                 try:
                     if sample.has_key("event_type"):
-                         logging.debug("recevied event  :%s",sample)
-                         self.producer.publish(sample)
+                         #logging.debug("recevied event  :%s",sample)
+                         logging.debug("recevied event  :%s",sample['event_type'])
+                         #self.producer.publish(sample)
+                         self.publish(sample)
                     else:
-                         logging.debug("recevied Sample  :%s",sample)
+                         #logging.debug("recevied Sample  :%s",sample)
+                         logging.debug("recevied Sample :%s",sample['counter_name'])
                          msg = self.convert_sample_to_event_data(sample)
-                         self.producer.publish(msg)
+                         #self.producer.publish(msg)
+                         self.publish(msg)
                 except Exception:
                     logging.exception("UDP: Unable to publish msg")
        
