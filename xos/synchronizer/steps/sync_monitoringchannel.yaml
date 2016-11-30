@@ -1,6 +1,6 @@
 ---
 - hosts: {{ instance_name }}
-  gather_facts: False
+#  gather_facts: False
   connection: ssh
   user: ubuntu
   sudo: yes
@@ -32,6 +32,15 @@
      - remove container
 {% else %}
 {% if full_setup %}
+  - name: Add hostname to /etc/hosts
+    lineinfile: dest=/etc/hosts
+      regexp='^127\.0\.0\.1'
+      line="127.0.0.1 localhost {{ '{{' }} ansible_hostname {{ '}}' }}"
+      owner=root group=root mode=0644
+
+  - name: Add user to docker group
+    user: name=ubuntu group=docker append=yes
+
 #  - name: Docker repository
 #    copy: src=/opt/xos/synchronizers/monitoring/files/docker.list
 #      dest=/etc/apt/sources.list.d/docker.list
@@ -66,21 +75,12 @@
 #      dest=/etc/resolv.conf
 {% endif %}
 
-# FIXME: Temporary workaround to delete the monitoring-channel_ceilometer_proxy_config file always 
-# to trigger ansible notify handlers in the following task. 
-# Due to some issue, ansible "changed" flag is set to false even though there is a change of 
-# ceilometer configuration file, because of which the configuration change is not reflecting in 
-# ceilometer containers 
-#  - file: path=/usr/local/share/monitoring-channel-{{ unique_id }}_ceilometer_proxy_config state=absent
-
   - name: ceilometer proxy config
     template: src=/opt/xos/synchronizers/monitoring/templates/ceilometer_proxy_config.j2 dest=/usr/local/share/monitoring-channel-{{ unique_id }}_ceilometer_proxy_config mode=0777
     notify:
      - copy ceilo-config-file
      - restart monitoring-channel container
-#     - stop monitoring-channel
-#     - remove container
-#     - start monitoring-channel
+     - set monitoring-channel-mtu
 
   - name: Monitoring channel upstart
     template: src=/opt/xos/synchronizers/monitoring/templates/monitoring-channel.conf.j2 dest=/etc/init/monitoring-channel-{{ unique_id }}.conf
@@ -119,7 +119,6 @@
 #      state=present
 #    with_items:
 #    - {{ ceilometer_port }}
-# These are samples, not necessary for correct function of demo
 
   - name: Make sure Monitoring channel service is running
     service: name=monitoring-channel-{{ unique_id }} state=started
@@ -143,3 +142,6 @@
 
   - name: start monitoring-channel
     service: name=monitoring-channel-{{ unique_id }} state=started
+
+  - name: set monitoring-channel-mtu
+    shell: docker exec monitoring-channel-{{ unique_id }} sudo ifconfig eth0 mtu 1450 up
