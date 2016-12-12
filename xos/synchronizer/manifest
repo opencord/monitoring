@@ -21,12 +21,8 @@ ceilometer/ceilometer-plugins/network/ext_services/vcpe/__init__.py
 manifest
 run.sh
 monitoring_synchronizer_config
-steps/sync_sflowtenant.yaml
-steps/sync_sflowtenant.py
 steps/sync_monitoringchannel.yaml
 steps/sync_monitoringchannel.py
-steps/sync_sflowservice.yaml
-steps/sync_sflowservice.py
 steps/sync_ceilometerservice.yaml
 steps/sync_ceilometerservice.py
 steps/sync_openstackmonitoringpublisher.py
