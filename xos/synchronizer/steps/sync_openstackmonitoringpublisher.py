@@ -111,8 +111,6 @@ class SyncOpenStackMonitoringPublisher(SyncInstanceUsingAnsible):
 
         run_template(template_name, fields)
 
-        o.save()
-
     def map_delete_inputs(self, o):
         fields = {"unique_id": o.id,
                   "delete": True}

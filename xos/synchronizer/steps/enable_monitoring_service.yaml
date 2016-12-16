@@ -11,9 +11,9 @@
         {% endfor %}
 
   tasks:
-  - name: debug
-    debug: msg=" {{ '{{' }} item {{ '}}' }} "
-    with_items: " {{ '{{' }} monitoringagents {{ '}}' }} "
+#  - name: debug
+#    debug: msg=" {{ '{{' }} item {{ '}}' }} "
+#    with_items: " {{ '{{' }} monitoringagents {{ '}}' }} "
     
   - name:  starting openstack service monitoring agent
     uri: 
