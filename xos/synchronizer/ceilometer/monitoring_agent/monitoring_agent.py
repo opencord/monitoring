@@ -33,10 +33,7 @@ def onos_start():
     try:
         target = request.json['target']
         logging.debug("target:%s",target)
-        metadata = request.json['meta_data'] 
-        logging.debug("metadata:%s",metadata)
-        logging.debug(type(target))
-        resources = metadata['resources']
+        resources = request.json['resources'] 
         logging.debug("resources:%s",resources)
         if not generate_pipeline.openstack_service_info:
             logging.debug("Openstak Service is not enabled,Only ONOS need to be enabled")

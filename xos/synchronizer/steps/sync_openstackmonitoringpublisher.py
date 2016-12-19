@@ -99,7 +99,7 @@ class SyncOpenStackMonitoringPublisher(SyncInstanceUsingAnsible):
               body = {'target': target_uri}
               if agent.start_url_json_data:
                  start_url_dict = json.loads(agent.start_url_json_data)
-                 body.update(agent.start_url_dict)
+                 body.update(start_url_dict)
               a = {'url': agent.start_url, 'body': json.dumps(body)}
               agent_info.append(a)
 

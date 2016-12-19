@@ -31,6 +31,18 @@
   - name: make sure /usr/local/share/monitoring_agent exists
     file: path=/usr/local/share/monitoring_agent state=directory owner=root group=root
 
+  - name: Copying ONOS driver files 
+    when : "'ceilometer' in instance_name"
+    copy: src=ceilometer-plugins/network/statistics/ dest=/usr/lib/python2.7/dist-packages/ceilometer/network/statistics/
+
+  - name: Enabling ONOS driver in /usr/lib/python2.7/dist-packages/ceilometer-2015.1.4.egg-info/entry_points.txt
+    when : "'ceilometer' in instance_name"
+    lineinfile:
+      dest: /usr/lib/python2.7/dist-packages/ceilometer-2015.1.4.egg-info/entry_points.txt
+      insertafter: '^\[network\.statistics\.drivers\]'
+      line: "onos = ceilometer.network.statistics.onos.driver:ONOSDriver"
+      state: present
+
   - name: Copying monitoring agent conf file
     when : "'ceilometer' in instance_name"
     set_fact: ceilometer_services="ceilometer-agent-central,ceilometer-agent-notification,ceilometer-collector,ceilometer-api"
