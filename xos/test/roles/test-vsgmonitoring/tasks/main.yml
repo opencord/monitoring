@@ -1,0 +1,28 @@
+---
+- name: Validate Monitoring URL is completely UP and metrics contain vSG related metrics
+  uri:
+    url: "{{monitoringservice.results[1].json[0].ceilometer_url}}v2/meters"
+    status_code: 200
+    return_content: yes
+    body_format: json
+    HEADER_Content-Type: "application/json"
+  register: metrics
+  until: "(metrics.status == 200) and (metrics.content|from_json|length>0) and ('vsg' in metrics.content)"
+  retries: 5
+  delay: 10
+
+- name: assert vSG metrics vsg.dns.cache.size are present
+  assert:
+    that: "'vsg.dns.cache.size' in metrics.content"
+    msg: "Metrics does not contains vsg.dns.cache.size related statistics"
+
+- name: assert vSG metrics vsg.dns.replaced_unexpired_entries are present
+  assert:
+    that: "'vsg.dns.replaced_unexpired_entries' in metrics.content"
+    msg: "Metrics does not contains vsg.dns.replaced_unexpired_entries related statistics"
+
+- name: assert vSG metrics vsg.dns.queries_answered_locally are present
+  assert:
+    that: "'vsg.dns.queries_answered_locally' in metrics.content"
+    msg: "Metrics does not contains vsg.dns.queries_answered_locally related statistics"
+

@@ -1,0 +1,28 @@
+---
+- name: Validate Monitoring URL is completely UP and valid metrics are returned
+  uri:
+    url: "{{monitoringservice.results[1].json[0].ceilometer_url}}v2/meters"
+    status_code: 200
+    return_content: yes
+    body_format: json
+    HEADER_Content-Type: "application/json"
+  register: metrics
+  until: "(metrics.status == 200) and (metrics.content|from_json|length>0)"
+  retries: 5
+  delay: 10
+
+- name: assert disk related infra metrics are present
+  assert:
+    that: "'disk.write.requests' in metrics.content"
+    msg: "Metrics does not contains disk related statistics"
+
+- name: assert memory related infra metrics are present
+  assert:
+    that: "'memory' in metrics.content"
+    msg: "Metrics does not contains memory related statistics"
+
+- name: assert cpu related infra metrics are present
+  assert:
+    that: "'cpu' in metrics.content"
+    msg: "Metrics does not contains cpu related statistics"
+

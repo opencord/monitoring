@@ -1,0 +1,17 @@
+---
+- name: Validate Monitoring URL is completely UP
+  uri:
+    url: "{{monitoringservice.results[1].json[0].ceilometer_url}}v2/meters"
+    status_code: 200
+    return_content: yes
+    body_format: json
+    HEADER_Content-Type: "application/json"
+  register: metrics
+  until: metrics.status == 200
+  retries: 5
+  delay: 10
+
+- name: assert no metrics are present
+  assert:
+    that: metrics.content|from_json|length==0
+    msg: "Meters list is non empty for the first time"

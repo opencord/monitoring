@@ -1,0 +1,17 @@
+---
+- name: Validate Monitoring service is ready
+  uri:
+    url: "{{item}}"
+    user: "{{ auth.user }}"
+    password: "{{ auth.pass }}"
+    status_code: 200
+    body_format: json
+    force_basic_auth: yes
+    HEADER_Content-Type: "application/json"
+  register: monitoringservice
+  until: "monitoringservice.json and 'OK' in monitoringservice.json[0].backend_status"
+  retries: 5
+  delay: 60
+  with_items:
+    - http://localhost:8888/api/service/monitoring/
+    - http://localhost:8888/api/tenant/monitoring/monitoringchannel/

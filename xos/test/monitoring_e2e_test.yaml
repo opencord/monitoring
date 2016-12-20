@@ -1,0 +1,13 @@
+---
+- hosts: localhost
+
+  vars:
+    auth:
+      user: padmin@vicci.org
+      pass: letmein
+
+  roles:
+    - {role: common}
+    - {role: test-initial, when: "{{test}}==1"}
+    - {role: test-inframonitoring, when: "{{test}}==2"}
+    - {role: test-vsgmonitoring, when: "{{test}}==3"}
