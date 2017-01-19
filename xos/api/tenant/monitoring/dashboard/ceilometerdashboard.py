@@ -253,6 +253,35 @@ class Meters(object):
         # Here will be the cached Meter objects, that will be reused for
         # repeated listing.
         self._cached_meters = {}
+        self._cached_all_meters = []
+
+    def get_all(self):
+        if not self._cached_all_meters:
+            for meter in self._ceilometer_meter_list:
+                meter_info = self._all_meters_info.get(meter['name'], None)
+                if meter_info:
+                    label = meter_info["label"]
+                    description = meter_info["description"]
+                    meter_category = meter_info["type"]
+                else:
+                    label = ""
+                    description = ""
+                    meter_category = "Other"
+                meter["label"] = label
+                meter["description"] = description
+                meter["category"] = meter_category
+                if meter["project_id"] in self.tenant_map.keys():
+                    meter["slice"] = self.tenant_map[meter["project_id"]]["slice"]
+                    meter["service"] = self.tenant_map[meter["project_id"]]["service"]
+                else:
+                    meter["slice"] = meter["project_id"]
+                    meter["service"] = "Other"
+                if meter["resource_id"] in self.resource_map.keys():
+                    meter["resource_name"] = self.resource_map[meter["resource_id"]]
+
+                self._cached_all_meters.append(meter)
+
+        return self._cached_all_meters
 
     def list_all(self, only_meters=None, except_meters=None):
         """Returns a list of meters based on the meters names.
@@ -1253,18 +1282,7 @@ class MetersList(APIView):
         tenant_map = getTenantControllerTenantMap(request.user)
         resource_map = get_resource_map(request, ceilometer_url=tenant_ceilometer_url, query=query)
         meters = Meters(request, ceilometer_url=tenant_ceilometer_url, query=query, tenant_map=tenant_map, resource_map=resource_map)
-        services = {
-            _('Nova'): meters.list_nova(),
-            _('Neutron'): meters.list_neutron(),
-            _('VSG'): meters.list_vcpe(),
-            _('VOLT'): meters.list_volt(),
-            _('SDN'): meters.list_sdn(),
-            _('BROADVIEW'): meters.list_broadview(),
-        }
-        meters = []
-        for service,smeters in services.iteritems():
-             meters.extend(smeters)
-        return Response(meters)
+        return Response(meters.get_all())
 
 class MeterStatisticsList(APIView):
     method_kind = "list"
@@ -1325,43 +1343,34 @@ class MeterStatisticsList(APIView):
         #Statistics query for all meter
         resource_map = get_resource_map(request, ceilometer_url=tenant_ceilometer_url, query=query)
         meters = Meters(request, ceilometer_url=tenant_ceilometer_url, query=query, tenant_map=tenant_map, resource_map=resource_map)
-        services = {
-            _('Nova'): meters.list_nova(),
-            _('Neutron'): meters.list_neutron(),
-            _('VSG'): meters.list_vcpe(),
-            _('VOLT'): meters.list_volt(),
-            _('SDN'): meters.list_sdn(),
-            _('BROADVIEW'): meters.list_broadview(),
-        }
         report_rows = []
-        for service,meters in services.items():
-            for meter in meters:
-                query = make_query(tenant_id=meter["project_id"],resource_id=meter["resource_id"])
-                if additional_query:
-                    query = query + additional_query
-                try:
-                    statistics = statistic_list(request, meter["name"],
-                                        ceilometer_url=tenant_ceilometer_url, query=query, period=3600*24)
-                except Exception as e:
-                    logger.error('Exception during statistics query for meter %(meter)s and reason:%(reason)s' % {'meter':meter["name"], 'reason':str(e)})
-                    statistics = None
+        for meter in meters.get_all():
+            query = make_query(tenant_id=meter["project_id"],resource_id=meter["resource_id"])
+            if additional_query:
+                query = query + additional_query
+            try:
+                statistics = statistic_list(request, meter["name"],
+                                    ceilometer_url=tenant_ceilometer_url, query=query, period=3600*24)
+            except Exception as e:
+                logger.error('Exception during statistics query for meter %(meter)s and reason:%(reason)s' % {'meter':meter["name"], 'reason':str(e)})
+                statistics = None
 
-                if not statistics:
-                    continue
-                statistic = statistics[-1]
-                row = {"name": 'none',
-                       "slice": meter["slice"],
-                       "project_id": meter["project_id"],
-                       "service": meter["service"],
-                       "resource_id": meter["resource_id"],
-                       "resource_name": meter["resource_name"],
-                       "meter": meter["name"],
-                       "description": meter["description"],
-                       "category": service,
-                       "time": statistic["period_end"],
-                       "value": statistic["avg"],
-                       "unit": meter["unit"]}
-                report_rows.append(row)
+            if not statistics:
+                continue
+            statistic = statistics[-1]
+            row = {"name": 'none',
+                   "slice": meter["slice"],
+                   "project_id": meter["project_id"],
+                   "service": meter["service"],
+                   "resource_id": meter["resource_id"],
+                   "resource_name": meter["resource_name"],
+                   "meter": meter["name"],
+                   "description": meter["description"],
+                   "category": meter["category"],
+                   "time": statistic["period_end"],
+                   "value": statistic["avg"],
+                   "unit": meter["unit"]}
+            report_rows.append(row)
 
         return Response(report_rows)
 

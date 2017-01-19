@@ -1,0 +1,28 @@
+---
+- name: Validate Monitoring URL is completely UP and metrics contain vSG related metrics
+  uri:
+    url: "{{monitoringservice.results[1].json[0].ceilometer_url}}v2/meters"
+    status_code: 200
+    return_content: yes
+    body_format: json
+    HEADER_Content-Type: "application/json"
+  register: metrics
+  until: "(metrics.status == 200) and (metrics.content|from_json|length>0) and ('exampleservice' in metrics.content)"
+  retries: 5
+  delay: 10
+
+- name: assert exampleservice metrics exampleservice.apache.total.accesses are present
+  assert:
+    that: "'exampleservice.apache.total.accesses' in metrics.content"
+    msg: "Metrics does not contains exampleservice.apache.total.accesses related statistics"
+
+- name: assert exampleservice metrics exampleservice.apache.uptime are present
+  assert:
+    that: "'exampleservice.apache.uptime' in metrics.content"
+    msg: "Metrics does not contains exampleservice.apache.uptime related statistics"
+
+- name: assert exampleservice metrics exampleservice.apache.reqpersec are present
+  assert:
+    that: "'exampleservice.apache.reqpersec' in metrics.content"
+    msg: "Metrics does not contains exampleservice.apache.reqpersec related statistics"
+

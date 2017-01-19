@@ -13,5 +13,5 @@
   retries: 5
   delay: 60
   with_items:
-    - http://localhost:8888/api/service/monitoring/
-    - http://localhost:8888/api/tenant/monitoring/monitoringchannel/
+    - http://localhost:9000/api/service/monitoring/
+    - http://localhost:9000/api/tenant/monitoring/monitoringchannel/
