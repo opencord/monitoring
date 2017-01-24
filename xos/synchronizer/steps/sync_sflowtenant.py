@@ -10,7 +10,7 @@ import json
 from django.db.models import F, Q
 from xos.config import Config
 from synchronizers.base.syncstep import SyncStep
-from synchronizers.base.ansible import run_template_ssh
+from synchronizers.base.ansible_helper import run_template_ssh
 from synchronizers.base.SyncInstanceUsingAnsible import SyncInstanceUsingAnsible
 from core.models import Service, Slice, ControllerSlice, ControllerUser
 from services.monitoring.models import SFlowService, SFlowTenant
