@@ -20,15 +20,18 @@ from django.contrib.admin.utils import quote
 
 class CeilometerServiceForm(forms.ModelForm):
     ceilometer_pub_sub_url = forms.CharField(required=False, max_length=1024, help_text="REST URL of ceilometer PUB/SUB component in http://IP:port/ format")
+    ceilometer_enable_pub_sub = forms.BooleanField()
 
     def __init__(self,*args,**kwargs):
         super (CeilometerServiceForm,self ).__init__(*args,**kwargs)
         if self.instance:
             # fields for the attributes
             self.fields['ceilometer_pub_sub_url'].initial = self.instance.ceilometer_pub_sub_url
+            self.fields['ceilometer_enable_pub_sub'].initial = self.instance.ceilometer_enable_pub_sub
 
     def save(self, commit=True):
         self.instance.ceilometer_pub_sub_url = self.cleaned_data.get("ceilometer_pub_sub_url")
+        self.instance.ceilometer_enable_pub_sub = self.cleaned_data.get("ceilometer_enable_pub_sub")
         return super(CeilometerServiceForm, self).save(commit=commit)
 
     class Meta:
@@ -41,8 +44,8 @@ class CeilometerServiceAdmin(ReadOnlyAwareAdmin):
     verbose_name_plural = "Ceilometer Service"
     list_display = ("backend_status_icon", "name", "enabled")
     list_display_links = ('backend_status_icon', 'name', )
-    fieldsets = [(None, {'fields': ['backend_status_text', 'name','enabled','versionNumber', 'description','ceilometer_pub_sub_url', "view_url","icon_url" ], 'classes':['suit-tab suit-tab-general']})]
-    readonly_fields = ('backend_status_text', )
+    fieldsets = [(None, {'fields': ['backend_status_text', 'name','enabled','versionNumber', 'description','ceilometer_pub_sub_url', 'ceilometer_enable_pub_sub', "view_url","icon_url" ], 'classes':['suit-tab suit-tab-general']})]
+    readonly_fields = ('backend_status_text', 'ceilometer_pub_sub_url',)
     inlines = [SliceInline,ServiceAttrAsTabInline,ServicePrivilegeInline]
     form = CeilometerServiceForm
 
@@ -105,10 +108,10 @@ class MonitoringChannelAdmin(ReadOnlyAwareAdmin):
     list_display = ('backend_status_icon', 'id', )
     list_display_links = ('backend_status_icon', 'id')
     fieldsets = [ (None, {'fields': ['backend_status_text', 'kind', 'provider_service', 'service_specific_attribute',
-                                     'ceilometer_url', 'tenant_list_str',
+                                     'ceilometer_url', 'ceilometer_ssh_proxy_url', 'kafka_url', 'tenant_list_str',
                                      'instance', 'creator'],
                           'classes':['suit-tab suit-tab-general']})]
-    readonly_fields = ('backend_status_text', 'instance', 'service_specific_attribute', 'ceilometer_url', 'tenant_list_str')
+    readonly_fields = ('backend_status_text', 'instance', 'service_specific_attribute', 'ceilometer_url', 'ceilometer_ssh_proxy_url', 'kafka_url', 'tenant_list_str')
     form = MonitoringChannelForm
 
     suit_form_tabs = (('general','Details'),)

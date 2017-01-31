@@ -1,7 +1,7 @@
 ---
 - name: Validate Monitoring URL is completely UP and metrics contain vSG related metrics
   uri:
-    url: "{{monitoringservice.results[1].json[0].ceilometer_url}}v2/meters"
+    url: "{{monitoringservice.results[1].json[0].ceilometer_ssh_proxy_url}}v2/meters"
     status_code: 200
     return_content: yes
     body_format: json

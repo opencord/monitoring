@@ -141,7 +141,12 @@ node_types:
             ceilometer_pub_sub_url:
                 type: string
                 required: false
-                description: REST URL of ceilometer PUB/SUB component
+                description: Deprecated....REST URL of ceilometer PUB/SUB component
+            ceilometer_enable_pub_sub:
+                type: boolean
+                default: false
+                required: false
+                description: If True then ceilometer PUB/SUB feature will be enabled.
 
     tosca.nodes.CeilometerTenant:
         derived_from: tosca.nodes.Root

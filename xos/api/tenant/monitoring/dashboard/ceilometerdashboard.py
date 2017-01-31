@@ -34,7 +34,7 @@ def getTenantCeilometerProxyURL(user):
     attempts = 0
     while True:
         try:
-            response = urllib2.urlopen(monitoring_channel.ceilometer_url)
+            response = urllib2.urlopen(monitoring_channel.ceilometer_ssh_proxy_url)
             break
         except urllib2.HTTPError, e:
             logger.info('HTTP error %(reason)s' % {'reason':e.reason})
@@ -46,8 +46,8 @@ def getTenantCeilometerProxyURL(user):
             logger.info('URL error %(reason)s' % {'reason':e.reason})
             time.sleep(1)
             pass
-    logger.info("Ceilometer proxy URL for user %(user)s is %(url)s" % {'user':user.username,'url':monitoring_channel.ceilometer_url})
-    return monitoring_channel.ceilometer_url
+    logger.info("Ceilometer proxy URL for user %(user)s is %(url)s" % {'user':user.username,'url':monitoring_channel.ceilometer_ssh_proxy_url})
+    return monitoring_channel.ceilometer_ssh_proxy_url
 
 def getTenantControllerTenantMap(user, slice=None):
     tenantmap={}

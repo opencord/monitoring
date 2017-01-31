@@ -12,6 +12,8 @@ templates/monitoring-channel.conf.j2
 templates/ceilometer_proxy_server.py
 templates/start_ceilometer_proxy
 templates/update-keystone-endpoints.py.j2
+templates/ceilometer_pipeline.yaml.j2
+templates/kafka_broker.py
 ceilometer/udp_proxy/udpagent.py
 templates/udpagent.conf.j2
 ceilometer/ceilometer-plugins/network/ext_services/openstack_infra/notifications.py

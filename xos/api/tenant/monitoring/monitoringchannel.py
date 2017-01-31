@@ -39,6 +39,8 @@ class MonitoringChannelSerializer(PlusModelSerializer):
         backend_status = ReadOnlyField()
         service_specific_attribute = ReadOnlyField()
         ceilometer_url = ReadOnlyField()
+        ceilometer_ssh_proxy_url = ReadOnlyField()
+        kafka_url = ReadOnlyField()
         tenant_list_str = ReadOnlyField()
         #creator = ReadOnlyField()
         #instance = ReadOnlyField()
@@ -51,7 +53,7 @@ class MonitoringChannelSerializer(PlusModelSerializer):
 
         class Meta:
             model = MonitoringChannelForAPI
-            fields = ('humanReadableName', 'id', 'backend_status', 'provider_service', 'service_specific_attribute', 'ceilometer_url', 'tenant_list_str', 'related' )
+            fields = ('humanReadableName', 'id', 'backend_status', 'provider_service', 'service_specific_attribute', 'ceilometer_url', 'ceilometer_ssh_proxy_url', 'kafka_url', 'tenant_list_str', 'related' )
 
         def getHumanReadableName(self, obj):
             return obj.__unicode__()

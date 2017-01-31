@@ -26,7 +26,7 @@ class CeilometerService(Service):
                     ]
 
     sync_attributes = ("private_ip", "private_mac",
-                       "nat_ip", "nat_mac", )
+                       "nat_ip", "nat_mac", "ceilometer_enable_pub_sub")
     class Meta:
         app_label = "monitoring"
         verbose_name = "Ceilometer Service"
@@ -93,6 +93,14 @@ class CeilometerService(Service):
         self.set_attribute("ceilometer_pub_sub_url", value)
 
     @property
+    def ceilometer_enable_pub_sub(self):
+        return self.get_attribute("ceilometer_enable_pub_sub", False)
+
+    @ceilometer_enable_pub_sub.setter
+    def ceilometer_enable_pub_sub(self, value):
+        self.set_attribute("ceilometer_enable_pub_sub", value)
+
+    @property
     def ceilometer_auth_url(self):
         #FIXME: Crude way to determine if monitoring service is getting deployed with its own ceilometer+keystone 
         if not self.get_instance():
@@ -150,6 +158,14 @@ class CeilometerService(Service):
         if not self.private_ip:
             return None
         return 'rabbit://openstack:password@' + self.private_ip + ':5672'
+
+    @property
+    def kafka_url(self):
+        if not self.get_instance():
+            return None
+        if not self.private_ip:
+            return None
+        return 'kafka://' + self.private_ip + ':9092'
 
     def delete(self, *args, **kwargs):
         instance = self.get_instance()
@@ -234,11 +250,11 @@ class MonitoringChannel(TenantWithContainer):   # aka 'CeilometerTenant'
 
     @property
     def private_ip(self):
-        return self.addresses.get("nat", (None, None))[0]
+        return self.addresses.get("private", (None, None))[0]
 
     @property
     def private_mac(self):
-        return self.addresses.get("nat", (None, None))[1]
+        return self.addresses.get("private", (None, None))[1]
 
     @property
     def ceilometer_ip(self):
@@ -319,16 +335,28 @@ class MonitoringChannel(TenantWithContainer):   # aka 'CeilometerTenant'
 
     @property
     def ceilometer_url(self):
+        if self.private_ip and self.ceilometer_port:
+            return "http://" + self.private_ip + ":" + str(self.ceilometer_port) + "/"
+        else:
+            return None
+
+    @property
+    def ceilometer_ssh_proxy_url(self):
         if self.ssh_proxy_tunnel:
             if self.ssh_tunnel_ip and self.ssh_tunnel_port:
                 return "http://" + self.ssh_tunnel_ip + ":" + str(self.ssh_tunnel_port) + "/"
             else:
                 return None
         else:
-            if self.private_ip and self.ceilometer_port:
-                return "http://" + self.private_ip + ":" + str(self.ceilometer_port) + "/"
-            else:
-                return None
+            return None
+
+    @property
+    def kafka_url(self):
+        ceilometer_services = CeilometerService.get_service_objects().all()
+        if not ceilometer_services:
+            return None
+        return ceilometer_services[0].kafka_url
+
 
 def model_policy_monitoring_channel(pk):
     # TODO: this should be made in to a real model_policy

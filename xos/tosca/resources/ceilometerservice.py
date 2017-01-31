@@ -5,7 +5,7 @@ from services.monitoring.models import CeilometerService
 class XOSCeilometerService(XOSService):
     provides = "tosca.nodes.CeilometerService"
     xos_model = CeilometerService
-    copyin_props = ["view_url", "icon_url", "enabled", "published", "private_key_fn", "public_key", "versionNumber", "ceilometer_pub_sub_url"]
+    copyin_props = ["view_url", "icon_url", "enabled", "published", "private_key_fn", "public_key", "versionNumber", "ceilometer_enable_pub_sub", "ceilometer_pub_sub_url"]
 
     def set_service_attr(self, obj, prop_name, value):
         value = self.try_intrinsic_function(value)

@@ -157,7 +157,7 @@ class SyncMonitoringChannel(SyncInstanceUsingAnsible):
                jump_hostname = fields["hostname"]
 
                #Get the tunnel detsination               
-               remote_host = o.private_ip
+               remote_host = o.nat_ip
                remote_port = o.ceilometer_port
                #FIXME: For now, trying to setup the tunnel on the local port same as the remote port
                local_port = remote_port

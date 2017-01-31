@@ -3,6 +3,7 @@ set -x
 BASE_KAFKA_VERSION=0.9.0.0
 KAFKA_VERSION=2.11-0.9.0.0
 export CONF_BASE=$PWD
+export SERVICE_HOST=$(hostname)
 echo $CONF_BASE
 sudo sed -i "s/.*127.0.0.1.*/127.0.0.1 localhost $(hostname)/" /etc/hosts
 
@@ -123,7 +124,8 @@ function install_kafka {
 
     if [[ ${SERVICE_HOST} ]]; then
 
-        sudo sed -i "s/host\.name=127\.0\.0\.1/host.name=${SERVICE_HOST}/g" /etc/kafka/server.properties
+        sudo sed -i "s/host\.name=127\.0\.0\.1/host.name=0.0.0.0/g" /etc/kafka/server.properties
+        sudo sed -i "s/^#advertised\.host\.name=.*$/advertised.host.name=${SERVICE_HOST}/g" /etc/kafka/server.properties
         sudo sed -i "s/zookeeper\.connect=127\.0\.0\.1:2181/zookeeper.connect=${SERVICE_HOST}:2181/g" /etc/kafka/server.properties
 
     fi

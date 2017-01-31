@@ -43,6 +43,8 @@ class CeilometerServiceSerializer(PlusModelSerializer):
         backend_status = ReadOnlyField()
         humanReadableName = serializers.SerializerMethodField("getHumanReadableName")
         ceilometer_pub_sub_url = ReadOnlyField()
+        ceilometer_enable_pub_sub = ReadOnlyField()
+        kafka_url = ReadOnlyField()
         related = serializers.DictField(required=False)
 
         class Meta:
@@ -51,6 +53,8 @@ class CeilometerServiceSerializer(PlusModelSerializer):
                       'id',
                       'backend_status',
                       'ceilometer_pub_sub_url',
+                      'ceilometer_enable_pub_sub',
+                      'kafka_url',
                       'related')
 
         def getHumanReadableName(self, obj):
