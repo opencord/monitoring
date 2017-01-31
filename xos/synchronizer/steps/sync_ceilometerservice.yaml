@@ -40,11 +40,12 @@
     notify:
      - restart ceilometer-agent-notification service
 
-  - name: Apply ceilometer kafka publisher patch until monitoring service is migrated to Newton release or later
-    become: yes
-    template: src=/opt/xos/synchronizers/monitoring/templates/kafka_broker.py dest=/usr/lib/python2.7/dist-packages/ceilometer/publisher/kafka_broker.py owner=root group=root mode=0777
-    notify:
-     - restart ceilometer-agent-notification service
+# No need of this step as this patch is directly applied inside monitoring service custom image
+#  - name: Apply ceilometer kafka publisher patch until monitoring service is migrated to Newton release or later
+#    become: yes
+#    template: src=/opt/xos/synchronizers/monitoring/templates/kafka_broker.py dest=/usr/lib/python2.7/dist-packages/ceilometer/publisher/kafka_broker.py owner=root group=root mode=0777
+#    notify:
+#     - restart ceilometer-agent-notification service
 
   handlers:
   - name: restart ceilometer-agent-notification service

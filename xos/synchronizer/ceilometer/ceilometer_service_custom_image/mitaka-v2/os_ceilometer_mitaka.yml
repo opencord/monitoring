@@ -159,7 +159,7 @@
     apt: name={{ item }} state=installed update_cache=yes
     with_items:
       - ceilometer-api
-      - ceilometer-collector
+#      - ceilometer-collector ---> This service is not needed as ceilometer support direct publishing to database
       - ceilometer-agent-central
       - ceilometer-agent-notification
       - python-ceilometerclient
@@ -176,5 +176,5 @@
   - name: Restarting Celometer API
     service: name=ceilometer-api state=restarted
 
-  - name: Restarting ceilometer-collector
-    service: name=ceilometer-collector state=restarted
+#  - name: Restarting ceilometer-collector
+#    service: name=ceilometer-collector state=restarted
