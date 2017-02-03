@@ -45,7 +45,10 @@
       - { regexp: '^[#]{0,}advertised\.host\.name=', line: 'advertised.host.name={{ instance_hostname }}' }
       - { regexp: '^[#]{0,}zookeeper\.connect=', line: 'zookeeper.connect={{ instance_hostname }}:2181' }
     notify:
+     - restart zookeeper service
      - restart kafka service
+     - stop ceilometer pub-sub
+     - start ceilometer pub-sub
 
   - name: Enabling/Disabling kafka publishing
     become: yes
@@ -61,9 +64,19 @@
 #     - restart ceilometer-agent-notification service
 
   handlers:
+  - name: restart zookeeper service
+    become: yes
+    service: name=zookeeper state=restarted
   - name: restart kafka service
     become: yes
     service: name=kafka state=restarted
+  - name: stop ceilometer pub-sub 
+    become: yes
+    shell: pkill -f sub_main.py
+    ignore_errors: True
+  - name: start ceilometer pub-sub 
+    become: yes
+    shell: cd /etc/init.d;sudo bash zxceilostartup.sh
   - name: restart ceilometer-agent-notification service
     become: yes
     service: name=ceilometer-agent-notification state=restarted

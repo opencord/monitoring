@@ -14,7 +14,7 @@ from xos.config import Config
 from synchronizers.base.syncstep import SyncStep
 from synchronizers.base.ansible_helper import run_template_ssh
 from synchronizers.base.SyncInstanceUsingAnsible import SyncInstanceUsingAnsible
-from core.models import Service, Slice
+from core.models import Service, Slice, ModelLink
 from services.monitoring.models import CeilometerService, MonitoringChannel
 from xos.logger import Logger, logging
 
@@ -44,6 +44,7 @@ class SSHTunnel:
         self.open = False
 
     def start(self):
+        logger.info("Creating SSH Tunnel: ssh -MfN -S %s -i %s -L %s:%s:%s;%s -o ExitOnForwardFailure=True %s@%s"%(self.socket, self.key, self.local_host, self.local_port, self.remote_host, self.remote_port,self.jump_user,self.jump_host))
         exit_status = subprocess.call(['ssh', '-MfN',
             '-S', self.socket,
             '-i', self.key,
@@ -101,6 +102,7 @@ class SyncMonitoringChannel(SyncInstanceUsingAnsible):
     requested_interval=0
     template_name = "sync_monitoringchannel.yaml"
     service_key_name = "/opt/xos/synchronizers/monitoring/monitoring_channel_private_key"
+    watches = [ModelLink(Slice,via='slice')]
 
     def __init__(self, *args, **kwargs):
         super(SyncMonitoringChannel, self).__init__(*args, **kwargs)
@@ -201,3 +203,17 @@ class SyncMonitoringChannel(SyncInstanceUsingAnsible):
         fields = {"unique_id": o.id,
                   "delete": True}
         return fields
+
+    def handle_watched_object(self, o):
+        logger.info("handle_watched_object is invoked for object %s" % (str(o)),extra=o.tologdict())
+        if (type(o) is Slice):
+           self.handle_slice_watch_notification(o)
+        pass
+
+    def handle_slice_watch_notification(self, sliceobj):
+        logger.info("handle_slice_watch_notification: A slice %s is created or updated or deleted" % (sliceobj))
+        for obj in MonitoringChannel.get_tenant_objects().all():
+            #Save the monitoring channel object to reflect the newly updated slice
+            obj.save()
+        pass
+

@@ -1,0 +1,30 @@
+---
+- hosts: "{{ hosts }}"
+
+  tasks:
+    - name: install pip and related packages
+      apt: name="{{ item }}" state=present update-cache=yes
+      become: yes
+      with_items:
+        - python-pip
+        - python-dev
+        - build-essential
+        - git
+        - msgpack-python
+
+    - name: install python packages
+      pip: name="{{ item }}" state=present
+      become: yes
+      with_items:
+        - virtualenv
+        - Flask
+        - kafka-python
+        - oslo.utils
+        - Babel
+
+    - name: create clone directory
+      file: path=~/auto-scale2 state=directory
+
+    - name: clone auto-scale repo
+      git: repo=https://gerrit.opencord.org/xos-external-app-examples dest=~/auto-scale2
+

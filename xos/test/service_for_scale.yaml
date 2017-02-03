@@ -1,0 +1,75 @@
+tosca_definitions_version: tosca_simple_yaml_1_0
+
+description: Setup example service/slice to demonstrate auto-scaling for that service/slice.
+
+imports:
+   - custom_types/xos.yaml
+
+topology_template:
+  node_templates:
+    service_xyz:
+      type: tosca.nodes.Service
+      properties:
+          kind: xyz
+
+# private network template, created in fixtures.yml
+    Private:
+      type: tosca.nodes.NetworkTemplate
+
+# site, fully created in deployment.yaml
+    mysite:
+      type: tosca.nodes.Site
+
+    trusty-server-multi-nic:
+      type: tosca.nodes.Image
+
+    m1.small:
+      type: tosca.nodes.Flavor
+
+# management network, fully created in management-net.yaml
+    management:
+      type: tosca.nodes.network.Network.XOS
+      properties:
+        no-create: true
+        no-delete: true
+        no-update: true
+
+    mysite_scalable_xyz:
+      type: tosca.nodes.Slice
+      properties:
+          network: noauto
+      requirements:
+          - service:
+              node: service_xyz
+              relationship: tosca.relationships.MemberOfService
+          - site:
+              node: mysite
+              relationship: tosca.relationships.MemberOfSite
+          - management:
+              node: management
+              relationship: tosca.relationships.ConnectsToNetwork
+          - default_image:
+                node: trusty-server-multi-nic
+                relationship: tosca.relationships.DefaultImage
+          - m1.small:
+              node: m1.small
+              relationship: tosca.relationships.DefaultFlavor
+
+    # Virtual machines
+    xyz_service_vm1:
+      type: tosca.nodes.Compute
+      capabilities:
+        # Host container properties
+        host:
+         properties:
+           num_cpus: 1
+           disk_size: 20 GB
+           mem_size: 2 GB
+      requirements:
+          - slice:
+                node: mysite_scalable_xyz
+                relationship: tosca.relationships.MemberOfSlice
+          - image:
+                node: trusty-server-multi-nic
+                relationship: tosca.relationships.UsesImage
+
