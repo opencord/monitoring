@@ -109,7 +109,7 @@ class SyncOpenStackMonitoringPublisher(SyncInstanceUsingAnsible):
         template_name = "enable_monitoring_service.yaml"
         fields["ansible_tag"] =  o.__class__.__name__ + "_" + str(o.id) + "_step2"
 
-        run_template(template_name, fields)
+        run_template(template_name, fields, object=o)
 
     def map_delete_inputs(self, o):
         fields = {"unique_id": o.id,
