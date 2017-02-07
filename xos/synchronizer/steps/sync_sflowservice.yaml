@@ -3,7 +3,7 @@
   gather_facts: False
   connection: ssh
   user: ubuntu
-  sudo: yes
+  become: yes
   vars:
      sflow_port: {{ sflow_port }}
      sflow_api_port: {{ sflow_api_port }}
