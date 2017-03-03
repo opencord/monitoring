@@ -1,0 +1,48 @@
+# Dockerfile.ceilo-agent-notification: docker file for building srikanthvavila/ceilometer-agent-notification container
+# It is built on top of srikanthvavila/ceilometer-base container
+
+FROM srikanthvavila/ceilometer-base
+LABEL maintainer "Open Networking Lab"
+
+ADD start-ceilo-agent-notification.sh /usr/bin/start-ceilo-agent-notification.sh
+RUN chmod +x /usr/bin/start-ceilo-agent-notification.sh
+#ADD ceilo-agent-notification.conf /etc/supervisor/conf.d/
+
+#CORD Monitoring service specific changes
+#Clone cord monitoring repository
+RUN git clone https://github.com/opencord/monitoring.git /opt/cord/monitoring/
+#Copy CORD specific ceilometer plugins to this container.
+RUN cp -r /opt/cord/monitoring/xos/synchronizer/ceilometer/ceilometer-plugins/network/ext_services /usr/local/lib/python2.7/dist-packages/ceilometer/network/ 
+#Copy the script that updates ceilometer entry_points.txt to load the above CORD specific plugins
+ADD load-ceilo-plugins.sh /usr/bin/load-ceilo-plugins.sh
+#Copy CORD specific pipeline.yaml file to this container.
+ADD pipeline.yaml /etc/ceilometer/pipeline.yaml
+#Copy the script that updates pipeline with other publishers (like kafka...etc) at run time based on the user inputs
+ADD update-pipeline.sh /usr/bin/update-pipeline.sh
+#Install kafka-python
+RUN pip install kafka-python
+#Add ceilometer kafka broker patch.
+#There is a bug in ceilometer/publisher/kafka_broker.py that causes inconsistent kafka publishing behavior
+#The patch is pulled from ceilometer master branch: https://review.openstack.org/#/c/392637/5/ceilometer/publisher/kafka_broker.py
+#On top of that patch, a minor change is done in _send() method to make it work with mitaka code base
+COPY ceilometer_kafka_patch/kafka_broker.py /usr/local/lib/python2.7/dist-packages/ceilometer/publisher/
+
+RUN echo "#!/bin/bash" > /usr/bin/create-mongo-user-db.sh
+RUN echo "if [ ! -z \"\$USE_MONGODB\" ]; then mongo --host mongodb --eval 'db = db.getSiblingDB(\"ceilometer\"); db.createUser({user: \"ceilometer\", pwd: \"password\", roles: [ \"readWrite\", \"dbAdmin\" ]})'; fi" >> /usr/bin/create-mongo-user-db.sh 
+RUN chmod +x /usr/bin/create-mongo-user-db.sh
+
+RUN echo "#!/bin/bash" > /usr/bin/config-ceilometer-mongo.sh
+RUN echo "if [ ! -z \"\$USE_MONGODB\" ]; then sed -r -i \"s,[#]*(metering_connection) = (.*),metering_connection = mongodb://ceilometer:password@mongodb:27017/ceilometer,g\" /etc/ceilometer/ceilometer.conf; fi" >> /usr/bin/config-ceilometer-mongo.sh
+RUN echo "if [ ! -z \"\$USE_MONGODB\" ]; then sed -r -i \"s,[#]*(event_connection) = (.*),event_connection = mongodb://ceilometer:password@mongodb:27017/ceilometer,g\" /etc/ceilometer/ceilometer.conf; fi" >> /usr/bin/config-ceilometer-mongo.sh
+RUN chmod +x /usr/bin/config-ceilometer-mongo.sh
+
+#Create a script that runs all the needed shell scripts when the container is started
+RUN echo "#!/bin/bash" > /usr/bin/deploy-ceilo-agent-notification
+RUN echo "bash /usr/bin/create-mongo-user-db.sh" >> /usr/bin/deploy-ceilo-agent-notification
+RUN echo "bash /usr/bin/load-ceilo-plugins.sh" >> /usr/bin/deploy-ceilo-agent-notification
+RUN echo "bash /usr/bin/update-pipeline.sh" >> /usr/bin/deploy-ceilo-agent-notification
+RUN echo "bash /usr/bin/config-ceilometer-mongo.sh" >> /usr/bin/deploy-ceilo-agent-notification
+RUN echo "/usr/bin/start-ceilo-agent-notification.sh" >> /usr/bin/deploy-ceilo-agent-notification
+RUN chmod +x /usr/bin/deploy-ceilo-agent-notification
+
+CMD ["/usr/bin/deploy-ceilo-agent-notification"]

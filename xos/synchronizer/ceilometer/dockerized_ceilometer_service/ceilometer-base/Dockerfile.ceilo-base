@@ -1,0 +1,48 @@
+# Dockerfile.ceilo-base: docker file for srikanthvavila/ceilometer-base
+# This image isn't used directly, but installs the prereqs for the other ceilometer images
+# Build this docker container before building other ceilometer containers
+# Build command: `pushd ceilometer-base;docker build -f Dockerfile.ceilo-base -t srikanthvavila/ceilometer-base
+# TODO: Remove srikanthvavila and use some official OpenCORD tag for all these containers
+FROM ubuntu:14.04.5
+LABEL maintainer "Open Networking Lab"
+
+# Install.
+RUN \
+  sed -i 's/# \(.*multiverse$\)/\1/g' /etc/apt/sources.list && \
+  apt-get update && \
+  apt-get -y upgrade && \
+  apt-get install -y build-essential && \
+  apt-get install -y software-properties-common && \
+  apt-get install -y byobu curl git htop man unzip vim wget supervisor python-dev python-pip libpq-dev && \
+  rm -rf /var/lib/apt/lists/*
+
+RUN pip install tox==1.6.1
+RUN pip install 'oslo.config<2.0.0'
+RUN pip install 'oslo.service'
+RUN pip install 'oslo.messaging'
+RUN pip install 'retrying'
+RUN pip install 'tooz'
+RUN pip install 'jsonpath-rw-ext'
+RUN pip install 'oslo.db'
+RUN pip install 'oslo.reports'
+RUN pip install 'python-keystoneclient'
+
+#Clone Ceilometer
+RUN git clone -b stable/mitaka https://github.com/openstack/ceilometer.git /opt/stack/ceilometer/
+
+WORKDIR /opt/stack/ceilometer
+RUN python setup.py install
+RUN mkdir -p /etc/ceilometer
+RUN tox -egenconfig
+RUN cp /opt/stack/ceilometer/etc/ceilometer/*.json /etc/ceilometer
+RUN cp /opt/stack/ceilometer/etc/ceilometer/*.yaml /etc/ceilometer
+RUN cp /opt/stack/ceilometer/etc/ceilometer/ceilometer.conf /etc/ceilometer/ceilometer.conf
+
+# Install Mongo shell utilities.
+RUN \
+  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6 && \
+  echo "deb [ arch=amd64 ] http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.4.list && \
+  apt-get update && \
+  apt-get install -y mongodb-org-shell
+
+RUN pip install 'pymongo'

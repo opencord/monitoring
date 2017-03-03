@@ -1,0 +1,56 @@
+# Docker-compose for CORD Monitoring Service
+#TODO: The IP addresses in this file need to be parameterized and set when the monitoring service is instantiated through XOS synchronizer
+
+rabbit1:
+  image: "rabbitmq:3-management"
+  hostname: "rabbit1"
+  environment:
+    RABBITMQ_ERLANG_COOKIE: "SWQOKODSQALRPCLNMEQG"
+    RABBITMQ_DEFAULT_USER: "openstack"
+    RABBITMQ_DEFAULT_PASS: "password"
+    RABBITMQ_DEFAULT_VHOST: "/"
+  ports:
+    - "15672:15672"
+    - "5672:5672"
+  labels:
+    NAME: "rabbitmq1"
+
+mongodb1:
+  image: "mongo:3.4"
+  ports:
+    - "27017:27017"
+  labels:
+    NAME: "mongodb1"
+
+kafka1:
+  image: "spotify/kafka"
+  hostname: "kafka1"
+  ports:
+    - "2181:2181"
+    - "9092:9092"
+  environment:
+    ADVERTISED_HOST: "10.0.5.5"
+    ADVERTISED_PORT: "9092"
+  labels:
+    NAME: "kafka1"
+
+ceilo-notification1:
+  image: "srikanthvavila/ceilometer-agent-notification"
+  labels:
+    NAME: "ceilometer-agent-notification"
+  links:
+    - rabbit1
+    - mongodb1:mongodb
+  environment:
+    RABBIT_TRANSPORT_URL: rabbit://openstack:password@rabbit1:5672//
+    KAFKA_PUBLISHER_URL: kafka://10.0.5.5:9092/topic=ceilometer
+    USE_MONGODB: 1
+
+cord-publish-subscribe:
+  image: "srikanthvavila/cord-publish-subscribe"
+  ports:
+    - "4455:4455"
+  labels:
+    NAME: "cord-publish-subscribe"
+  environment:
+    KAFKA_URL: kafka://10.0.5.5:9092/topic=ceilometer

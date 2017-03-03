@@ -1,0 +1,31 @@
+FROM ubuntu:14.04.5
+LABEL maintainer "Open Networking Lab"
+
+# Install.
+RUN \
+  sed -i 's/# \(.*multiverse$\)/\1/g' /etc/apt/sources.list && \
+  apt-get update && \
+  apt-get -y upgrade && \
+  apt-get install -y curl git python-dev python-pip
+
+RUN pip install msgpack-python
+RUN pip install oslo.utils
+RUN pip install oslo.config
+RUN pip install netifaces
+RUN pip install Babel
+RUN pip install Flask
+RUN pip install kafka-python
+RUN pip install wrapt
+
+#Clone cord monitoring repository
+RUN git clone https://github.com/opencord/monitoring.git /opt/cord/monitoring/
+
+WORKDIR /opt/cord/monitoring/xos/synchronizer/ceilometer/ceilometer_pub_sub/
+RUN chmod +x sub_main.py
+
+RUN echo "#!/bin/sh" > deploy-cord-publish-subscribe
+RUN echo "if [ ! -z \"\$KAFKA_URL\" ]; then sed -r -i \"s,^(target) = (.*),target = \$KAFKA_URL,g\" pub_sub.conf; fi" >> deploy-cord-publish-subscribe 
+RUN echo "python sub_main.py" >> deploy-cord-publish-subscribe 
+RUN chmod +x deploy-cord-publish-subscribe
+
+CMD ["./deploy-cord-publish-subscribe"]
