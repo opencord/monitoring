@@ -1,6 +1,6 @@
 from django.db import models
 from django.core.validators import URLValidator
-from core.models import Service, PlCoreBase, Slice, Instance, Tenant, TenantWithContainer, Node, Image, User, Flavor, Subscriber, CoarseTenant, ServiceMonitoringAgentInfo
+from core.models import Service, PlCoreBase, Slice, Instance, Tenant, TenantWithContainer, Node, Image, User, Flavor, Subscriber, ServiceDependency, ServiceMonitoringAgentInfo
 from core.models.plcorebase import StrippedCharField
 import os
 from django.db import models, transaction
@@ -524,7 +524,7 @@ class UserServiceMonitoringPublisher(MonitoringPublisher):
         tenancy_from_target_service_id = self.get_attribute("tenancy_from_target_service_id")
         if not tenancy_from_target_service_id:
             return None
-        tenancy_from_target_services = CoarseTenant.objects.filter(id=tenancy_from_target_service_id)
+        tenancy_from_target_services = ServiceDependency.objects.filter(id=tenancy_from_target_service_id)
         if not tenancy_from_target_services:
             return None
         tenancy_from_target_service = tenancy_from_target_services[0]
@@ -546,7 +546,7 @@ class UserServiceMonitoringPublisher(MonitoringPublisher):
         service_monitoring_agent_id = self.get_attribute("service_monitoring_agent")
         if not service_monitoring_agent_id:
             return None
-        service_monitoring_agents = CoarseTenant.objects.filter(id=service_monitoring_agent_id)
+        service_monitoring_agents = ServiceDependency.objects.filter(id=service_monitoring_agent_id)
         if not service_monitoring_agents:
             return None
         service_monitoring_agent = service_monitoring_agents[0]
@@ -579,7 +579,7 @@ class UserServiceMonitoringPublisher(MonitoringPublisher):
             if publisher_count > 0:
                 raise XOSValidationError("Already %s publishers exist for service. Can only create max 1 UserServiceMonitoringPublisher instances" % str(publisher_count))
             #Create Service composition object here
-            tenancy_from_target_service = CoarseTenant(provider_service = self.provider_service,
+            tenancy_from_target_service = ServiceDependency(provider_service = self.provider_service,
                                                    subscriber_service = self.target_service)
             tenancy_from_target_service.save()
             self.tenancy_from_target_service = tenancy_from_target_service
