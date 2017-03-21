@@ -1,6 +1,6 @@
 from django.db import models
 from django.core.validators import URLValidator
-from core.models import Service, PlCoreBase, Slice, Instance, Tenant, TenantWithContainer, Node, Image, User, Flavor, Subscriber, ServiceDependency, ServiceMonitoringAgentInfo
+from core.models import Service, PlCoreBase, Slice, Instance, Tenant, TenantWithContainer, Node, Image, User, Flavor, ServiceDependency, ServiceMonitoringAgentInfo
 from core.models.plcorebase import StrippedCharField
 import os
 from django.db import models, transaction
