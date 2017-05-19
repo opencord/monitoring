@@ -1,7 +1,7 @@
 from django.db import models
 from django.core.validators import URLValidator
-from core.models import Service, PlCoreBase, Slice, Instance, Tenant, TenantWithContainer, Node, Image, User, Flavor, ServiceDependency, ServiceMonitoringAgentInfo
-from core.models.plcorebase import StrippedCharField
+from core.models import Service, XOSBase, Slice, Instance, Tenant, TenantWithContainer, Node, Image, User, Flavor, ServiceDependency, ServiceMonitoringAgentInfo
+from core.models.xosbase import StrippedCharField
 import os
 from django.db import models, transaction
 from django.forms.models import model_to_dict
@@ -609,7 +609,7 @@ class InfraMonitoringAgentInfo(ServiceMonitoringAgentInfo):
     stop_url = models.TextField(validators=[URLValidator()], help_text="URL/API to be used to stop monitoring agent")
     monitoring_publisher = models.ForeignKey(MonitoringPublisher, related_name="monitoring_agents", null=True, blank=True)
 
-class MonitoringCollectorPluginInfo(PlCoreBase):
+class MonitoringCollectorPluginInfo(XOSBase):
     class Meta:
         app_label = "monitoring"
     name = models.CharField(max_length=32)
