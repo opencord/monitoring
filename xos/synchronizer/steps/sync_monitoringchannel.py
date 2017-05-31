@@ -11,11 +11,12 @@ import tempfile
 #from sshtunnel import SSHTunnelForwarder
 from django.db.models import F, Q
 from xos.config import Config
-from synchronizers.base.syncstep import SyncStep
-from synchronizers.base.ansible_helper import run_template_ssh
-from synchronizers.base.SyncInstanceUsingAnsible import SyncInstanceUsingAnsible
-from core.models import Service, Slice, ModelLink
-from services.monitoring.models import CeilometerService, MonitoringChannel
+from synchronizers.new_base.syncstep import SyncStep
+from synchronizers.new_base.ansible_helper import run_template_ssh
+from synchronizers.new_base.SyncInstanceUsingAnsible import SyncInstanceUsingAnsible
+from modelaccessor import *
+#from core.models import Service, Slice, ModelLink
+#from services.monitoring.models import CeilometerService, MonitoringChannel
 from xos.logger import Logger, logging
 
 parentdir = os.path.join(os.path.dirname(__file__),"..")
@@ -216,4 +217,3 @@ class SyncMonitoringChannel(SyncInstanceUsingAnsible):
             #Save the monitoring channel object to reflect the newly updated slice
             obj.save()
         pass
-
