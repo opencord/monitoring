@@ -1,0 +1,53 @@
+option ceilometer_kind="ceilometer";
+option ceilometer_publish_tenant_kind = "ceilo-publish-tenant"
+option ceilometer_publish_tenant_os_kind = "ceilo-os-publish-tenant"
+option ceilometer_publish_tenant_onos_kind = "ceilo-onos-publish-tenant"
+option ceilometer_publish_tenant_user_kind = "ceilo-user-publish-tenant"
+
+
+message CeilometerService (Service) {
+
+}
+
+message MonitoringChannel (Service) {
+
+}
+
+
+message MonitoringPublisher (Tenant) {
+
+}
+
+message OpenStackServiceMonitoringPublisher (MonitoringPublisher) {
+
+}
+
+message ONOSServiceMonitoringPublisher (MonitoringPublisher) {
+
+}
+
+message UserServiceMonitoringPublisher (MonitoringPublisher) {
+
+}
+
+message InfraMonitoringAgentInfo (ServiceMonitoringAgentInfo) {
+     required manytoone monitoring_publisher->MonitoringPublisher:monitoring_agents = 1 [null = True, blank = True];
+     required string start_url = 2 [help_text = "URL/API to be used to start monitoring agent", validators=[URLValidator()]];
+     required string start_url_json_data = 3 [help_text = "Metadata to be passed along with start API"];
+     required string stop_url = 4 [help_text = "URL/API to be used to stop monitoring agent", validators=[URLValidator()]];
+}
+
+message MonitoringCollectorPluginInfo (PlCoreBase) {
+     required onetoone monitoring_publisher->MonitoringPublisher:monitoring_collector_plugin = 1 [null = True, blank = True];
+     required string name = 2 [max_length=32];
+     required string plugin_folder_path = 3 [blank=True, null=True, max_length=1024, help_text="Path pointing to plugin files. e.g. /opt/xos/synchronizers/monitoring/ceilometer/ceilometer-plugins/network/ext_services/vsg/"];
+     required string plugin_rabbit_exchange = 4 [blank=True, null=True, max_length=100];
+}
+
+message SFlowService (Service) {
+
+}
+
+message SFlowTenant (Tenant) {
+
+}

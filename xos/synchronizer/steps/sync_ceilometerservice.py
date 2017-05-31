@@ -11,11 +11,12 @@ import tempfile
 #from sshtunnel import SSHTunnelForwarder
 from django.db.models import F, Q
 from xos.config import Config
-from synchronizers.base.syncstep import SyncStep
-from synchronizers.base.ansible_helper import run_template_ssh
-from synchronizers.base.SyncInstanceUsingAnsible import SyncInstanceUsingAnsible
-from core.models import Service, Slice
-from services.monitoring.models import CeilometerService, MonitoringChannel
+from synchronizers.new_base.syncstep import SyncStep
+from synchronizers.new_base.ansible_helper import run_template_ssh
+from synchronizers.new_base.SyncInstanceUsingAnsible import SyncInstanceUsingAnsible
+#from services.monitoring.models import CeilometerService, MonitoringChannel
+#from core.models import Service, Slice
+from modelaccessor import *
 from xos.logger import Logger, logging
 
 parentdir = os.path.join(os.path.dirname(__file__),"..")
