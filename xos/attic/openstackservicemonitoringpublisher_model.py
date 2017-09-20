@@ -21,7 +21,7 @@ def can_update(self, user):
     #Don't allow creation of this model instances for non-admin users also
     return False
 
-def save(self, *args, **kwargs):
+def __xos_save_base(self, *args, **kwargs):
     if not self.creator:
         if not getattr(self, "caller", None):
             # caller must be set when creating a monitoring channel since it creates a slice
@@ -36,4 +36,5 @@ def save(self, *args, **kwargs):
         if publisher_count > 0:
             raise XOSValidationError("Already %s openstack publishers exist for user Can only create max 1 OpenStackServiceMonitoringPublisher instance per user" % str(publisher_count))
 
-    super(OpenStackServiceMonitoringPublisher, self).save(*args, **kwargs)
+    return False
+

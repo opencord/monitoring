@@ -90,7 +90,7 @@ def service_monitoring_agent(self, value):
         self.cached_service_monitoring_agent = None
     self.set_attribute("service_monitoring_agent", value)
 
-def save(self, *args, **kwargs):
+def __xos_save_base(self, *args, **kwargs):
     if not self.creator:
         if not getattr(self, "caller", None):
             # caller must be set when creating a monitoring channel since it creates a slice
@@ -129,3 +129,5 @@ def save(self, *args, **kwargs):
         if service_monitoring_agent:
             service_monitoring_agent.delete()
         raise
+
+    return True     # Indicate that we called super.save()

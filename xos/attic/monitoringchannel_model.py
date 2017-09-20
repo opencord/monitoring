@@ -30,7 +30,7 @@ def can_update(self, user):
     #Allow creation of this model instances for non-admin users also
     return True
 
-def save(self, *args, **kwargs):
+def __xos_save_base(self, *args, **kwargs):
     if not self.creator:
         if not getattr(self, "caller", None):
             # caller must be set when creating a monitoring channel since it creates a slice
@@ -45,8 +45,8 @@ def save(self, *args, **kwargs):
         if channel_count > 0:
             raise XOSValidationError("Already %s channels exist for user Can only create max 1 MonitoringChannel instance per user" % str(channel_count))
 
-    super(MonitoringChannel, self).save(*args, **kwargs)
     model_policy_monitoring_channel(self.pk)
+    return False
 
 def delete(self, *args, **kwargs):
     self.cleanup_container()

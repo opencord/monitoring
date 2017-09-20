@@ -56,7 +56,7 @@ def listening_endpoint(self, value):
         raise XOSProgrammingError("SFlowTenant: Only UDP listening endpoint URLs are accepted...valid syntax is: udp://ip:port")
     self.set_attribute("listening_endpoint", value)
 
-def save(self, *args, **kwargs):
+def __xos_save_base(self, *args, **kwargs):
     if not self.creator:
         if not getattr(self, "caller", None):
             # caller must be set when creating a SFlow tenant since it creates a slice
@@ -74,7 +74,7 @@ def save(self, *args, **kwargs):
         if channel_count > 0:
             raise XOSValidationError("Already %s sflow channels exist for user Can only create max 1 tenant per user and listening endpoint" % str(channel_count))
 
-    super(SFlowTenant, self).save(*args, **kwargs)
+    return False
 
 def delete(self, *args, **kwargs):
     super(MonitoringChannel, self).delete(*args, **kwargs)
