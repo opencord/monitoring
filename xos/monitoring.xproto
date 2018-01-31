@@ -1,9 +1,8 @@
 option ceilometer_kind="ceilometer";
-option ceilometer_publish_tenant_kind = "ceilo-publish-tenant"
-option ceilometer_publish_tenant_os_kind = "ceilo-os-publish-tenant"
-option ceilometer_publish_tenant_onos_kind = "ceilo-onos-publish-tenant"
-option ceilometer_publish_tenant_user_kind = "ceilo-user-publish-tenant"
-
+option ceilometer_publish_tenant_kind = "ceilo-publish-tenant";
+option ceilometer_publish_tenant_os_kind = "ceilo-os-publish-tenant";
+option ceilometer_publish_tenant_onos_kind = "ceilo-onos-publish-tenant";
+option ceilometer_publish_tenant_user_kind = "ceilo-user-publish-tenant";
 
 message CeilometerService (Service) {
 
@@ -32,9 +31,9 @@ message UserServiceMonitoringPublisher (MonitoringPublisher) {
 
 message InfraMonitoringAgentInfo (ServiceMonitoringAgentInfo) {
      required manytoone monitoring_publisher->MonitoringPublisher:monitoring_agents = 1 [null = True, blank = True];
-     required string start_url = 2 [help_text = "URL/API to be used to start monitoring agent", validators=[URLValidator()]];
+     required string start_url = 2 [help_text = "URL/API to be used to start monitoring agent", validators="URLValidator"];
      required string start_url_json_data = 3 [help_text = "Metadata to be passed along with start API"];
-     required string stop_url = 4 [help_text = "URL/API to be used to stop monitoring agent", validators=[URLValidator()]];
+     required string stop_url = 4 [help_text = "URL/API to be used to stop monitoring agent", validators="URLValidator"];
 }
 
 message MonitoringCollectorPluginInfo (PlCoreBase) {
